@@ -170,7 +170,7 @@ function decodeHtml(s){const d=document.createElement('textarea');d.innerHTML=s;
 async function translateToKorean(s){
  if(!s)return '';
  try{
-   const res=await fetch('https://translation.googleapis.com/language/translate/v2?key=YOUR_GOOGLE_MAPS_API_KEY',{
+   const res=await fetch('https://translation.googleapis.com/language/translate/v2?key=AIzaSyDhyCcxPYFN5Fp4Pkqbcz69Phd-OXgWgzE',{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({q:s,target:'ko',format:'text'})
    });
@@ -431,5 +431,5 @@ initFilters();updateSubs();render();$('cat').addEventListener('change',()=>{upda
 function tab(w){document.body.classList.toggle('mobile-map',w==='map');document.body.classList.toggle('mobile-list',w==='list');$('tabList').classList.toggle('active',w==='list');$('tabMap').classList.toggle('active',w==='map');if(w==='map'&&map)setTimeout(()=>{google.maps.event.trigger(map,'resize');fitCurrent()},80)}$('tabList').onclick=()=>tab('list');$('tabMap').onclick=()=>tab('map');
 </script>
 <!-- 기존 GitHub Pages에서 사용 중인 웹사이트 제한 API 키로 교체. 이 v3의 사진/리뷰 기능을 쓰려면 해당 키의 API 제한에 Maps JavaScript API + Places API (New)를 허용해야 합니다. -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap&v=weekly&libraries=places"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDhyCcxPYFN5Fp4Pkqbcz69Phd-OXgWgzE&callback=initMap&v=weekly&libraries=places"></script>
 </body></html>

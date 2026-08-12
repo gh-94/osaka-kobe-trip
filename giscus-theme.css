@@ -1,0 +1,72 @@
+/* Minimal Giscus theme for Osaka/Kobe trip app.
+   Goal: author · time · comment body · reactions, with minimal chrome. */
+@import url("https://giscus.app/themes/dark_dimmed.css");
+
+main{
+  --color-canvas-default:transparent;
+  --color-canvas-subtle:transparent;
+  --color-border-default:#343942;
+  --color-border-muted:#2a2f36;
+  --color-fg-default:#e7e9ec;
+  --color-fg-muted:#969da8;
+  --color-accent-fg:#7bb2ff;
+}
+.gsc-main,.gsc-comments,.gsc-comment,.gsc-comment-box,.gsc-replies{
+  border:0!important;box-shadow:none!important;background:transparent!important;
+}
+.gsc-comments>.gsc-header,.gsc-comments-count,.gsc-left-header,.gsc-right-header,
+.gsc-social-reaction-summary-item,.gsc-reactions-menu,.gsc-timeline{
+  display:none!important;
+}
+.gsc-comment{
+  border-top:1px solid var(--color-border-muted)!important;
+  border-radius:0!important;margin:0!important;padding:10px 0 8px!important;
+}
+.gsc-comment:first-child{border-top:0!important}
+.gsc-comment-header{
+  padding:0 0 4px!important;margin:0!important;border:0!important;
+  background:transparent!important;min-height:0!important;
+}
+.gsc-comment-author,.gsc-comment-header a,.gsc-comment-header span{
+  font-size:12px!important;line-height:1.25!important;
+}
+.gsc-comment-author{font-weight:650!important}
+.gsc-comment-header .avatar,.gsc-comment-author-avatar,.gsc-comment-header .Label,
+.gsc-comment-header .gsc-comment-author-avatar,.gsc-comment-header [class*="avatar"],
+.gsc-comment-header [class*="Label"]{display:none!important}
+.gsc-comment-content{
+  padding:3px 0 5px!important;margin:0!important;font-size:13px!important;line-height:1.5!important;
+}
+.gsc-comment-content p{margin:0 0 5px!important}
+.gsc-comment-content p:last-child{margin-bottom:0!important}
+.gsc-comment-footer{
+  padding:2px 0 0!important;margin:0!important;border:0!important;min-height:0!important;
+}
+.gsc-comment-footer button,.gsc-comment-footer .Button{
+  min-height:26px!important;padding:2px 7px!important;font-size:11px!important;border-radius:7px!important;
+}
+/* 답글 쓰기 UI와 답글 스레드는 숨기되, 리액션 컨트롤은 유지 */
+.gsc-replies,.gsc-reply,.gsc-reply-box,.gsc-comment-box:not(.gsc-comment-box-main),
+button[data-testid*="reply"],button[aria-label*="답글"],button[aria-label*="Reply"]{
+  display:none!important;
+}
+/* 새 댓글 작성창은 남기되 최대한 컴팩트 */
+.gsc-comment-box-main{
+  border-top:1px solid var(--color-border-muted)!important;margin-top:8px!important;padding-top:8px!important;
+}
+.gsc-comment-box-tabs,.gsc-comment-box-separator{display:none!important}
+.gsc-comment-box-textarea,.gsc-comment-box textarea,.gsc-textarea{
+  min-height:62px!important;max-height:110px!important;font-size:12px!important;line-height:1.45!important;border-radius:8px!important;
+}
+.gsc-comment-box-bottom{padding:5px 0 0!important}
+.gsc-comment-box-bottom button,.gsc-comment-box-bottom .Button{
+  min-height:28px!important;padding:3px 9px!important;font-size:11px!important;
+}
+.gsc-comment-box-markdown-hint,.gsc-comment-box .toolbar,
+.gsc-comment-box [class*="toolbar"],.gsc-comment-box [class*="Markdown"]{
+  display:none!important;
+}
+@media(max-width:600px){
+  .gsc-comment{padding:8px 0 7px!important}
+  .gsc-comment-content{font-size:12px!important}
+}

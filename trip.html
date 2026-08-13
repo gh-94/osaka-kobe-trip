@@ -48,6 +48,16 @@ body{-webkit-text-size-adjust:100%;height:100dvh;height:100vh;display:flex;flex-
 #doc .pcard .pp li b{color:var(--text);font-weight:600}
 #toTop{position:fixed;right:16px;bottom:22px;width:46px;height:46px;border-radius:50%;background:var(--accent);color:#1a1206;border:none;font-size:19px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;cursor:pointer;touch-action:manipulation}
 #toTop.show{display:flex}
+/* 우선순위 뱃지 */
+.ptag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--card2);border:1px solid var(--line);color:var(--muted);margin-left:6px;cursor:pointer;vertical-align:middle;touch-action:manipulation;white-space:nowrap;user-select:none}
+.ptag.set{color:#fff;border-color:transparent}
+.ptag.state-1{background:#a8791a}
+.ptag.state-2{background:#6b7280}
+.ptag.state-3{background:#8a5a2e}
+.ptag.state-hold{background:#374151}
+.ptag.state-skip{background:#7f1d1d}
+.pbtn{display:inline-block;border:1px solid var(--line);background:var(--card2);color:var(--accent2);border-radius:99px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;margin:14px 8px 0 0;touch-action:manipulation}
+.pbtn.danger{color:#f87171}
 iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--line);border-radius:16px;background:var(--card);display:block}
 @media (max-width:480px){
   .head h1{font-size:17px}
@@ -72,6 +82,7 @@ iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--li
     <div class="tab" data-tab="day4">DAY4</div>
     <div class="tab" data-tab="context">🗂 컨텍스트</div>
     <div class="tab" data-tab="phrases">🗣 회화</div>
+    <div class="tab" data-tab="priority">⭐ 우선순위</div>
     <div class="tab" data-tab="map">📍 전체 지도</div>
   </div>
 </div>
@@ -83,6 +94,7 @@ iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--li
   <div class="pane" data-pane="day4"><div class="loading">불러오는 중…</div></div>
   <div class="pane" data-pane="context"><div class="loading">불러오는 중…</div></div>
   <div class="pane" data-pane="phrases"><div class="loading">불러오는 중…</div></div>
+  <div class="pane" data-pane="priority"><div id="priorityView"></div></div>
 
   <div class="pane iframe-pane" data-pane="planner">
     <iframe class="planner" src="./day2_planner.html" title="Day2 플래너"></iframe>
@@ -106,15 +118,121 @@ const FILES = {
   phrases: 'japanese_phrases.md'
 };
 const loaded = {};
-const VALID_TABS = ['index','day1','day2','planner','day3','day4','context','phrases','map'];
+const VALID_TABS = ['index','day1','day2','planner','day3','day4','context','phrases','priority','map'];
 
 function loadMd(key){
   if(loaded[key]) return;
   const pane = document.querySelector(`.pane[data-pane="${key}"]`);
   fetch('./' + FILES[key])
     .then(r => { if(!r.ok) throw new Error('파일을 찾을 수 없습니다: ' + FILES[key]); return r.text(); })
-    .then(md => { pane.innerHTML = '<div id="doc">' + marked.parse(md) + '</div>'; loaded[key] = true; })
+    .then(md => { pane.innerHTML = '<div id="doc">' + marked.parse(md) + '</div>'; loaded[key] = true; tagPlaceIds(pane); })
     .catch(err => { pane.innerHTML = '<p style="color:#f87171">' + err.message + '</p>'; });
+}
+
+/* ===== 우선순위 태깅 (P번호 뱃지) ===== */
+const PKEY = 'osaka_trip_priority_v1';
+const PSTATES = [null, '1', '2', '3', 'hold', 'skip'];
+const PSTATE_LABEL = { '1': '🥇 1순위', '2': '🥈 2순위', '3': '🥉 3순위', 'hold': '🤔 보류', 'skip': '❌ 제외' };
+
+function loadPriorities(){ try { return JSON.parse(localStorage.getItem(PKEY) || '{}'); } catch(e){ return {}; } }
+function savePriorities(obj){ try { localStorage.setItem(PKEY, JSON.stringify(obj)); } catch(e){} }
+
+function cyclePriority(pid, label){
+  const data = loadPriorities();
+  const cur = data[pid] ? data[pid].v : null;
+  const idx = (PSTATES.indexOf(cur) + 1) % PSTATES.length;
+  const next = PSTATES[idx];
+  if (next === null) delete data[pid];
+  else data[pid] = { v: next, label: label };
+  savePriorities(data);
+}
+
+function updateBadge(badge, pid){
+  const data = loadPriorities();
+  const cur = data[pid];
+  badge.textContent = cur ? PSTATE_LABEL[cur.v] : '탭하여 순위';
+  badge.className = 'ptag' + (cur ? ' set state-' + cur.v : '');
+}
+
+function tagPlaceIds(root){
+  const heads = root.querySelectorAll('h2, h3');
+  heads.forEach((h) => {
+    if (h.dataset.ptagged) return;
+    const m = h.textContent.match(/P\d{3}/);
+    if (!m) return;
+    const pid = m[0];
+    h.dataset.ptagged = '1';
+    const label = h.textContent.trim();
+    const badge = document.createElement('span');
+    badge.className = 'ptag';
+    updateBadge(badge, pid);
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cyclePriority(pid, label);
+      updateBadge(badge, pid);
+    });
+    h.appendChild(document.createTextNode(' '));
+    h.appendChild(badge);
+  });
+}
+
+function renderPrioritySummary(){
+  const data = loadPriorities();
+  const order = ['1', '2', '3', 'hold', 'skip'];
+  const titles = { '1': '🥇 1순위', '2': '🥈 2순위', '3': '🥉 3순위', 'hold': '🤔 보류', 'skip': '❌ 제외' };
+  const groups = { '1': [], '2': [], '3': [], 'hold': [], 'skip': [] };
+  Object.keys(data).forEach((pid) => { groups[data[pid].v].push({ pid, label: data[pid].label }); });
+
+  let html = '<div id="doc"><h1>⭐ 우리 둘의 우선순위</h1>';
+  html += '<div class="pnote">각 문서 안 장소 제목 옆 뱃지를 탭하면 순위가 매겨져요(탭할 때마다 1→2→3→보류→제외→초기화 순환). 이 기기에만 저장돼요 — 상대방과 공유하려면 아래 복사 버튼 사용.</div>';
+  let any = false;
+  order.forEach((key) => {
+    if (groups[key].length === 0) return;
+    any = true;
+    html += `<div class="pcat">${titles[key]} (${groups[key].length}곳)</div>`;
+    groups[key].forEach((item) => {
+      html += `<div class="pcard"><div class="pk">${item.label.replace(/</g, '&lt;')}</div></div>`;
+    });
+  });
+  if (!any) html += '<p style="color:var(--muted);font-size:14px">아직 매긴 순위가 없어요. DAY1~4 탭에서 장소 제목 옆 회색 뱃지를 탭해보세요.</p>';
+  html += '<button class="pbtn" id="copyPriority">📋 순위 목록 복사하기</button>';
+  html += '<button class="pbtn danger" id="resetPriority">🗑 전체 초기화</button>';
+  html += '</div>';
+
+  const view = document.getElementById('priorityView');
+  view.innerHTML = html;
+  document.getElementById('copyPriority').addEventListener('click', copyPrioritySummary);
+  document.getElementById('resetPriority').addEventListener('click', () => {
+    if (confirm('정말 전체 순위를 초기화할까요? (이 기기 기준)')) {
+      localStorage.removeItem(PKEY);
+      renderPrioritySummary();
+      document.querySelectorAll('.ptag').forEach((b) => { b.textContent = '탭하여 순위'; b.className = 'ptag'; });
+    }
+  });
+}
+
+function copyPrioritySummary(){
+  const data = loadPriorities();
+  const order = ['1', '2', '3', 'hold', 'skip'];
+  const titles = { '1': '1순위', '2': '2순위', '3': '3순위', 'hold': '보류', 'skip': '제외' };
+  let text = '🎡 오사카·고베 여행 우선순위\n';
+  let any = false;
+  order.forEach((key) => {
+    const items = Object.keys(data).filter((pid) => data[pid].v === key);
+    if (items.length === 0) return;
+    any = true;
+    text += `\n[${titles[key]}]\n`;
+    items.forEach((pid) => { text += `- ${data[pid].label}\n`; });
+  });
+  if (!any) text += '\n(아직 매긴 순위 없음)';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => alert('복사됐어요! 카톡 등에 붙여넣기 하시면 됩니다.'),
+      () => window.prompt('아래 텍스트를 직접 복사하세요:', text)
+    );
+  } else {
+    window.prompt('아래 텍스트를 직접 복사하세요:', text);
+  }
 }
 
 // 탭 전환 시 iframe(플래너·지도)은 DOM에서 제거되지 않고 display만 바뀌므로
@@ -125,6 +243,7 @@ function activate(key){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === key));
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.dataset.pane === key));
   if(FILES[key]) loadMd(key);
+  if(key === 'priority') renderPrioritySummary();
   history.replaceState(null, '', '#' + key);
 }
 

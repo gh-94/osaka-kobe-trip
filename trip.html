@@ -49,15 +49,31 @@ body{-webkit-text-size-adjust:100%;height:100dvh;height:100vh;display:flex;flex-
 #toTop{position:fixed;right:16px;bottom:22px;width:46px;height:46px;border-radius:50%;background:var(--accent);color:#1a1206;border:none;font-size:19px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;cursor:pointer;touch-action:manipulation}
 #toTop.show{display:flex}
 /* 우선순위 뱃지 */
-.ptag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--card2);border:1px solid var(--line);color:var(--muted);margin-left:6px;cursor:pointer;vertical-align:middle;touch-action:manipulation;white-space:nowrap;user-select:none}
-.ptag.set{color:#fff;border-color:transparent}
-.ptag.state-1{background:#a8791a}
-.ptag.state-2{background:#6b7280}
-.ptag.state-3{background:#8a5a2e}
-.ptag.state-hold{background:#374151}
-.ptag.state-skip{background:#7f1d1d}
+.pselect-wrap{position:relative;display:inline-block;vertical-align:middle;margin-left:6px}
+.pselect-wrap::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:9px;color:inherit;pointer-events:none}
+.pselect{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:1px solid var(--line);outline:none;font-size:11px;font-weight:700;padding:3px 24px 3px 10px;border-radius:99px;background:var(--card2);color:var(--muted);cursor:pointer;touch-action:manipulation;max-width:150px}
+.pselect.v-go{background:#b45309;color:#fff;border-color:transparent}
+.pselect.v-maybe{background:#0e7490;color:#fff;border-color:transparent}
+.pselect.v-ok{background:#4b5563;color:#fff;border-color:transparent}
+.pselect.v-meh{background:#5b1f1f;color:#fff;border-color:transparent}
 .pbtn{display:inline-block;border:1px solid var(--line);background:var(--card2);color:var(--accent2);border-radius:99px;padding:9px 16px;font-size:13.5px;font-weight:700;cursor:pointer;margin:14px 8px 0 0;touch-action:manipulation}
 .pbtn.danger{color:#f87171}
+.pinfo{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:rgba(90,200,250,.15);border:1px solid rgba(90,200,250,.4);color:var(--accent2);margin-left:6px;cursor:pointer;vertical-align:middle;touch-action:manipulation;white-space:nowrap;user-select:none}
+/* 바텀시트 */
+#sheetBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;display:none}
+#sheetBackdrop.show{display:block}
+#sheet{position:fixed;left:0;right:0;bottom:0;height:82vh;background:var(--card);border-radius:18px 18px 0 0;z-index:91;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s ease;box-shadow:0 -8px 30px rgba(0,0,0,.5)}
+#sheet.show{transform:translateY(0)}
+#sheetHead{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+#sheetHead .stitle{font-size:13.5px;font-weight:700;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sheetClose{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;touch-action:manipulation;flex:none}
+.sheetNav{background:var(--card2);border:1px solid var(--line);color:var(--accent2);border-radius:50%;width:32px;height:32px;font-size:15px;cursor:pointer;touch-action:manipulation;flex:none}
+.sheetNav[disabled]{opacity:.3;pointer-events:none}
+.sheetNav.hide{display:none}
+#sheetCounter{font-size:11.5px;color:var(--muted);flex:none;white-space:nowrap}
+#sheetBody{flex:1;min-height:0}
+#sheetBody iframe{width:100%;height:100%;border:none}
+#sheetGrip{width:36px;height:4px;border-radius:99px;background:var(--line);margin:8px auto 0}
 iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--line);border-radius:16px;background:var(--card);display:block}
 @media (max-width:480px){
   .head h1{font-size:17px}
@@ -107,6 +123,19 @@ iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--li
 
 <button id="toTop" aria-label="맨 위로">↑</button>
 
+<div id="sheetBackdrop"></div>
+<div id="sheet">
+  <div id="sheetGrip"></div>
+  <div id="sheetHead">
+    <button id="sheetPrev" class="sheetNav" aria-label="이전">◀</button>
+    <span class="stitle" id="sheetTitle">장소 정보</span>
+    <span id="sheetCounter"></span>
+    <button id="sheetNext" class="sheetNav" aria-label="다음">▶</button>
+    <button id="sheetClose" aria-label="닫기">✕</button>
+  </div>
+  <div id="sheetBody"><iframe id="sheetFrame" src="about:blank" title="장소 상세"></iframe></div>
+</div>
+
 <script>
 const FILES = {
   index: '00_trip_index_checklist.md',
@@ -121,70 +150,142 @@ const loaded = {};
 const VALID_TABS = ['index','day1','day2','planner','day3','day4','context','phrases','priority','map'];
 
 function loadMd(key){
-  if(loaded[key]) return;
+  if(loaded[key]) return Promise.resolve();
   const pane = document.querySelector(`.pane[data-pane="${key}"]`);
-  fetch('./' + FILES[key])
+  return fetch('./' + FILES[key])
     .then(r => { if(!r.ok) throw new Error('파일을 찾을 수 없습니다: ' + FILES[key]); return r.text(); })
     .then(md => { pane.innerHTML = '<div id="doc">' + marked.parse(md) + '</div>'; loaded[key] = true; tagPlaceIds(pane); })
     .catch(err => { pane.innerHTML = '<p style="color:#f87171">' + err.message + '</p>'; });
 }
 
-/* ===== 우선순위 태깅 (P번호 뱃지) ===== */
+/* ===== 우선순위 태깅 (P번호 드롭다운) ===== */
 const PKEY = 'osaka_trip_priority_v1';
-const PSTATES = [null, '1', '2', '3', 'hold', 'skip'];
-const PSTATE_LABEL = { '1': '🥇 1순위', '2': '🥈 2순위', '3': '🥉 3순위', 'hold': '🤔 보류', 'skip': '❌ 제외' };
+const PORDER = ['go', 'maybe', 'ok', 'meh'];
+const PSTATE_LABEL = { 'go': '🔥 꼭 가보자', 'maybe': '👍 가능하면 가보자', 'ok': '🤔 나쁘지 않을지도', 'meh': '😶 그냥그냥' };
+const PLACE_REGISTRY = {}; // pid -> label (모든 문서를 훑어서 등록되는 전체 장소 목록)
 
 function loadPriorities(){ try { return JSON.parse(localStorage.getItem(PKEY) || '{}'); } catch(e){ return {}; } }
 function savePriorities(obj){ try { localStorage.setItem(PKEY, JSON.stringify(obj)); } catch(e){} }
 
-function cyclePriority(pid, label){
+function setPriority(pid, label, value){
   const data = loadPriorities();
-  const cur = data[pid] ? data[pid].v : null;
-  const idx = (PSTATES.indexOf(cur) + 1) % PSTATES.length;
-  const next = PSTATES[idx];
-  if (next === null) delete data[pid];
-  else data[pid] = { v: next, label: label };
+  if (!value) delete data[pid];
+  else data[pid] = { v: value, label: label };
   savePriorities(data);
 }
 
-function updateBadge(badge, pid){
-  const data = loadPriorities();
-  const cur = data[pid];
-  badge.textContent = cur ? PSTATE_LABEL[cur.v] : '탭하여 순위';
-  badge.className = 'ptag' + (cur ? ' set state-' + cur.v : '');
+function paintSelect(sel, value){
+  sel.className = 'pselect' + (value ? ' v-' + value : '');
 }
 
 function tagPlaceIds(root){
   const heads = root.querySelectorAll('h2, h3');
   heads.forEach((h) => {
     if (h.dataset.ptagged) return;
-    const m = h.textContent.match(/P\d{3}/);
-    if (!m) return;
-    const pid = m[0];
+    const allIds = [...h.textContent.matchAll(/P\d{3}/g)].map((m) => m[0]);
+    if (allIds.length === 0) return;
+    const pid = allIds[0];
     h.dataset.ptagged = '1';
     const label = h.textContent.trim();
-    const badge = document.createElement('span');
-    badge.className = 'ptag';
-    updateBadge(badge, pid);
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      cyclePriority(pid, label);
-      updateBadge(badge, pid);
+    PLACE_REGISTRY[pid] = label;
+    const stored = loadPriorities()[pid];
+    const curVal = stored ? stored.v : '';
+
+    const wrap = document.createElement('span');
+    wrap.className = 'pselect-wrap';
+    const sel = document.createElement('select');
+    sel.className = 'pselect';
+    const optNone = document.createElement('option');
+    optNone.value = ''; optNone.textContent = '순위 선택';
+    sel.appendChild(optNone);
+    PORDER.forEach((key) => {
+      const opt = document.createElement('option');
+      opt.value = key; opt.textContent = PSTATE_LABEL[key];
+      sel.appendChild(opt);
     });
+    sel.value = curVal;
+    paintSelect(sel, curVal);
+    sel.addEventListener('click', (e) => e.stopPropagation());
+    sel.addEventListener('change', () => {
+      setPriority(pid, label, sel.value);
+      paintSelect(sel, sel.value);
+    });
+    wrap.appendChild(sel);
+
+    const infoBtn = document.createElement('span');
+    infoBtn.className = 'pinfo';
+    infoBtn.textContent = allIds.length > 1 ? `📍 정보(${allIds.length})` : '📍 정보';
+    infoBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openSheet(allIds, label);
+    });
+
     h.appendChild(document.createTextNode(' '));
-    h.appendChild(badge);
+    h.appendChild(infoBtn);
+    h.appendChild(wrap);
   });
 }
 
+/* ===== 장소 상세 바텀시트 (여러 P번호면 좌우 이동) ===== */
+const sheetEl = document.getElementById('sheet');
+const sheetBackdrop = document.getElementById('sheetBackdrop');
+const sheetFrame = document.getElementById('sheetFrame');
+const sheetTitle = document.getElementById('sheetTitle');
+const sheetCounter = document.getElementById('sheetCounter');
+const sheetPrev = document.getElementById('sheetPrev');
+const sheetNext = document.getElementById('sheetNext');
+let sheetIds = [];
+let sheetIndex = 0;
+
+function renderSheetFrame(){
+  const pid = sheetIds[sheetIndex];
+  sheetFrame.src = `./index.html?place=${pid}&view=map`;
+  const multi = sheetIds.length > 1;
+  sheetPrev.classList.toggle('hide', !multi);
+  sheetNext.classList.toggle('hide', !multi);
+  sheetCounter.textContent = multi ? `${pid} · ${sheetIndex + 1}/${sheetIds.length}` : pid;
+}
+function openSheet(ids, label){
+  sheetIds = Array.isArray(ids) ? ids : [ids];
+  sheetIndex = 0;
+  sheetTitle.textContent = label;
+  renderSheetFrame();
+  sheetBackdrop.classList.add('show');
+  sheetEl.classList.add('show');
+}
+function closeSheet(){
+  sheetBackdrop.classList.remove('show');
+  sheetEl.classList.remove('show');
+  setTimeout(() => { sheetFrame.src = 'about:blank'; }, 300);
+}
+sheetPrev.addEventListener('click', () => { sheetIndex = (sheetIndex - 1 + sheetIds.length) % sheetIds.length; renderSheetFrame(); });
+sheetNext.addEventListener('click', () => { sheetIndex = (sheetIndex + 1) % sheetIds.length; renderSheetFrame(); });
+sheetBackdrop.addEventListener('click', closeSheet);
+document.getElementById('sheetClose').addEventListener('click', closeSheet);
+
 function renderPrioritySummary(){
   const data = loadPriorities();
-  const order = ['1', '2', '3', 'hold', 'skip'];
-  const titles = { '1': '🥇 1순위', '2': '🥈 2순위', '3': '🥉 3순위', 'hold': '🤔 보류', 'skip': '❌ 제외' };
-  const groups = { '1': [], '2': [], '3': [], 'hold': [], 'skip': [] };
+  const order = PORDER;
+  const titles = PSTATE_LABEL;
+  const groups = { 'go': [], 'maybe': [], 'ok': [], 'meh': [] };
   Object.keys(data).forEach((pid) => { groups[data[pid].v].push({ pid, label: data[pid].label }); });
+  const unrated = Object.keys(PLACE_REGISTRY).filter((pid) => !data[pid]).map((pid) => ({ pid, label: PLACE_REGISTRY[pid] }));
 
   let html = '<div id="doc"><h1>⭐ 우리 둘의 우선순위</h1>';
-  html += '<div class="pnote">각 문서 안 장소 제목 옆 뱃지를 탭하면 순위가 매겨져요(탭할 때마다 1→2→3→보류→제외→초기화 순환). 이 기기에만 저장돼요 — 상대방과 공유하려면 아래 복사 버튼 사용.</div>';
+  html += '<div class="pcat">📖 사용법</div>';
+  html += '<div class="pcard">';
+  html += '<div class="pk">1. DAY1~4 탭에서 장소 제목을 읽고, 제목 옆 <b>드롭다운(순위 선택 ▾)</b>을 눌러 하나 고르세요.</div>';
+  html += '</div>';
+  html += '<div class="pcard">';
+  html += '<div class="pk">2. 제목 옆 <b>📍 정보</b> 버튼을 누르면 지도·상세정보가 화면 아래에서 뜹니다. 번호가 여러 개면 ◀▶로 넘겨보고, 바깥 어두운 부분이나 ✕로 닫으세요.</div>';
+  html += '</div>';
+  html += '<div class="pcard">';
+  html += '<div class="pk">3. 여기 "⭐ 우선순위" 탭에서 매긴 결과가 등급별로 모여요. 아직 안 매긴 곳은 "➖ 미표기"에 접혀 들어가요.</div>';
+  html += '</div>';
+  html += '<div class="pcard">';
+  html += '<div class="pk">4. 저장은 <b>이 기기(브라우저)에만</b> 남아요 — 상대방과 자동 동기화 안 됨. 각자 다 매긴 뒤 <b>"📋 순위 목록 복사하기"</b>로 카톡 등에 붙여넣어 서로 비교하세요.</div>';
+  html += '</div>';
+  html += '<div class="pnote">Day1~4 전체를 취합해서 보여줘요.</div>';
   let any = false;
   order.forEach((key) => {
     if (groups[key].length === 0) return;
@@ -194,7 +295,14 @@ function renderPrioritySummary(){
       html += `<div class="pcard"><div class="pk">${item.label.replace(/</g, '&lt;')}</div></div>`;
     });
   });
-  if (!any) html += '<p style="color:var(--muted);font-size:14px">아직 매긴 순위가 없어요. DAY1~4 탭에서 장소 제목 옆 회색 뱃지를 탭해보세요.</p>';
+  if (!any) html += '<p style="color:var(--muted);font-size:14px">아직 매긴 순위가 없어요. DAY1~4 탭에서 장소 제목 옆 드롭다운을 눌러보세요.</p>';
+  if (unrated.length > 0) {
+    html += `<details style="margin-top:14px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;font-weight:700">➖ 미표기 (${unrated.length}곳) — 탭하여 펼치기</summary>`;
+    unrated.forEach((item) => {
+      html += `<div class="pcard"><div class="pk">${item.label.replace(/</g, '&lt;')}</div></div>`;
+    });
+    html += '</details>';
+  }
   html += '<button class="pbtn" id="copyPriority">📋 순위 목록 복사하기</button>';
   html += '<button class="pbtn danger" id="resetPriority">🗑 전체 초기화</button>';
   html += '</div>';
@@ -206,25 +314,27 @@ function renderPrioritySummary(){
     if (confirm('정말 전체 순위를 초기화할까요? (이 기기 기준)')) {
       localStorage.removeItem(PKEY);
       renderPrioritySummary();
-      document.querySelectorAll('.ptag').forEach((b) => { b.textContent = '탭하여 순위'; b.className = 'ptag'; });
+      document.querySelectorAll('.pselect').forEach((s) => { s.value = ''; paintSelect(s, ''); });
     }
   });
 }
 
 function copyPrioritySummary(){
   const data = loadPriorities();
-  const order = ['1', '2', '3', 'hold', 'skip'];
-  const titles = { '1': '1순위', '2': '2순위', '3': '3순위', 'hold': '보류', 'skip': '제외' };
-  let text = '🎡 오사카·고베 여행 우선순위\n';
-  let any = false;
+  const order = PORDER;
+  const titles = { 'go': '🔥 꼭 가보자', 'maybe': '👍 가능하면 가보자', 'ok': '🤔 나쁘지 않을지도', 'meh': '😶 그냥그냥' };
+  let text = '🎡 오사카·고베 여행 우선순위 (Day1~4 전체 취합)\n';
   order.forEach((key) => {
     const items = Object.keys(data).filter((pid) => data[pid].v === key);
     if (items.length === 0) return;
-    any = true;
     text += `\n[${titles[key]}]\n`;
     items.forEach((pid) => { text += `- ${data[pid].label}\n`; });
   });
-  if (!any) text += '\n(아직 매긴 순위 없음)';
+  const unrated = Object.keys(PLACE_REGISTRY).filter((pid) => !data[pid]);
+  if (unrated.length > 0) {
+    text += `\n[➖ 미표기]\n`;
+    unrated.forEach((pid) => { text += `- ${PLACE_REGISTRY[pid]}\n`; });
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(
       () => alert('복사됐어요! 카톡 등에 붙여넣기 하시면 됩니다.'),
@@ -243,7 +353,10 @@ function activate(key){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === key));
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.dataset.pane === key));
   if(FILES[key]) loadMd(key);
-  if(key === 'priority') renderPrioritySummary();
+  if(key === 'priority'){
+    // 우선순위 탭은 Day1~4를 전부 취합해서 보여줘야 하므로, 아직 안 열어본 탭까지 미리 백그라운드로 로드
+    Promise.all(Object.keys(FILES).map((k) => loadMd(k))).then(renderPrioritySummary);
+  }
   history.replaceState(null, '', '#' + key);
 }
 

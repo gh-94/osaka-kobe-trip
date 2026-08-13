@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>오사카·고베 3박4일</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+:root{--bg:#0f1216;--card:#181c22;--card2:#1e242c;--line:#2a313a;--text:#e8eaed;--muted:#9aa4b0;--accent:#ff7a59;--accent2:#5ac8fa}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.65;overscroll-behavior-y:none}
+body{-webkit-text-size-adjust:100%}
+.head{max-width:900px;margin:0 auto;padding:16px 16px 0}
+.head h1{font-size:19px;margin:4px 0 2px}
+.head .sub{color:var(--muted);font-size:12.5px;margin-bottom:12px}
+.tabbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:0 16px}
+.tabs{max-width:900px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:9px 15px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.12s;touch-action:manipulation;user-select:none}
+.tab:hover{border-color:var(--accent)}
+.tab.active{background:var(--accent);color:#1a1206;border-color:var(--accent)}
+.body{max-width:900px;margin:0 auto;padding:18px 16px 80px}
+.pane{display:none}
+.pane.active{display:block}
+#doc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px}
+#doc h1{font-size:22px;border-bottom:1px solid var(--line);padding-bottom:10px}
+#doc h2{font-size:18px;color:var(--accent2);margin-top:28px}
+#doc h3{font-size:15.5px;margin-top:20px}
+#doc p,#doc li{font-size:14.5px}
+#doc code{background:var(--card2);padding:2px 5px;border-radius:5px;font-size:13px}
+#doc table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;display:block;overflow-x:auto}
+#doc th,#doc td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+#doc th{background:var(--card2);color:var(--accent2)}
+#doc blockquote{border-left:3px solid var(--accent);margin:12px 0;padding:4px 14px;background:var(--card2);border-radius:0 8px 8px 0;color:var(--muted)}
+#doc hr{border:none;border-top:1px solid var(--line);margin:24px 0}
+#doc strong{color:#fff}
+#doc a{color:var(--accent2)}
+.loading{color:var(--muted);text-align:center;padding:40px}
+iframe.planner{width:100%;height:calc(100vh - 130px);height:calc(100dvh - 130px);min-height:520px;border:1px solid var(--line);border-radius:16px;background:var(--card);-webkit-overflow-scrolling:touch}
+@media (max-width:480px){
+  .head h1{font-size:17px}
+  .tab{padding:8px 12px;font-size:13px}
+  #doc{padding:18px 15px}
+  #doc h1{font-size:19px}
+}
+.toplink{display:inline-block;margin-bottom:12px;color:var(--accent2);text-decoration:none;font-size:13px;border:1px solid var(--line);border-radius:99px;padding:5px 12px;background:var(--card2);cursor:pointer;touch-action:manipulation;user-select:none}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>🎡 오사카·고베 3박4일</h1>
+  <div class="sub">2026-08-15(토) ~ 08-18(화) · 2인 · 탭을 눌러 이동</div>
+</div>
+<div class="tabbar">
+  <div class="tabs" id="tabs">
+    <div class="tab" data-tab="index">✅ 체크리스트</div>
+    <div class="tab" data-tab="day1">DAY1</div>
+    <div class="tab" data-tab="day2">DAY2</div>
+    <div class="tab" data-tab="planner">🗺 Day2 플래너</div>
+    <div class="tab" data-tab="day3">DAY3</div>
+    <div class="tab" data-tab="day4">DAY4</div>
+    <div class="tab" data-tab="context">🗂 컨텍스트</div>
+    <div class="tab" data-tab="map">📍 전체 지도</div>
+  </div>
+</div>
+<div class="body">
+  <div class="toplink" id="mapShortcut">📍 지도 바로가기</div>
+
+  <div class="pane" data-pane="index"><div class="loading">불러오는 중…</div></div>
+  <div class="pane" data-pane="day1"><div class="loading">불러오는 중…</div></div>
+  <div class="pane" data-pane="day2"><div class="loading">불러오는 중…</div></div>
+  <div class="pane" data-pane="day3"><div class="loading">불러오는 중…</div></div>
+  <div class="pane" data-pane="day4"><div class="loading">불러오는 중…</div></div>
+  <div class="pane" data-pane="context"><div class="loading">불러오는 중…</div></div>
+
+  <div class="pane" data-pane="planner">
+    <iframe class="planner" src="./day2_planner.html" title="Day2 플래너"></iframe>
+  </div>
+
+  <div class="pane" data-pane="map">
+    <iframe class="planner" src="./index.html" title="전체 지도"></iframe>
+  </div>
+</div>
+
+<script>
+const FILES = {
+  index: '00_trip_index_checklist.md',
+  day1: 'day1_osaka_master.md',
+  day2: 'day2_osaka_master.md',
+  day3: 'day3_kobe_master.md',
+  day4: 'day4_kobe_master.md',
+  context: 'context_osaka.md'
+};
+const loaded = {};
+
+function loadMd(key){
+  if(loaded[key]) return;
+  const pane = document.querySelector(`.pane[data-pane="${key}"]`);
+  fetch('./' + FILES[key])
+    .then(r => { if(!r.ok) throw new Error('파일을 찾을 수 없습니다: ' + FILES[key]); return r.text(); })
+    .then(md => { pane.innerHTML = '<div id="doc">' + marked.parse(md) + '</div>'; loaded[key] = true; })
+    .catch(err => { pane.innerHTML = '<p style="color:#f87171">' + err.message + '</p>'; });
+}
+
+function activate(key){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === key));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.dataset.pane === key));
+  if(FILES[key]) loadMd(key);
+  history.replaceState(null, '', '#' + key);
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => activate(t.dataset.tab));
+});
+document.getElementById('mapShortcut').addEventListener('click', () => activate('map'));
+
+const initial = (location.hash || '#index').slice(1);
+activate(FILES[initial] || initial === 'planner' || initial === 'map' ? initial : 'index');
+</script>
+</body></html>

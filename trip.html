@@ -239,7 +239,7 @@ let sheetIndex = 0;
 
 function renderSheetFrame(){
   const pid = sheetIds[sheetIndex];
-  sheetFrame.src = `./index.html?place=${pid}&view=map`;
+  sheetFrame.src = `./index.html?place=${pid}&view=map&embed=1`;
   const multi = sheetIds.length > 1;
   sheetPrev.classList.toggle('hide', !multi);
   sheetNext.classList.toggle('hide', !multi);

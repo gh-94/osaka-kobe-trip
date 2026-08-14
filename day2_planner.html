@@ -95,6 +95,11 @@ h1{font-size:20px;margin:6px 0 2px}
 .aimpact.ok{color:#7ad88a}
 .aimpact.warn{color:#ffce7a}
 .aimpact.danger{color:#ff7a7a}
+.now{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sbtoggle{font-size:11px;color:var(--accent2);background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 10px;cursor:pointer;touch-action:manipulation;flex:none;touch-action:manipulation}
+.sbdetail{margin-top:6px}
+.rowmini{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rowmini .btn.ghost.mini{padding:6px 10px;font-size:11.5px}
 a{color:var(--accent2)}
 </style>
 </head>
@@ -235,6 +240,8 @@ function weatherFeel(m){const h=(((m%1440)+1440)%1440)/60;let d;
 
 // ================= 경로 빌더 =================
 let B={cur:START,time:600,visited:new Set(),path:[]};
+let sbOpen=false;
+function toggleSb(){sbOpen=!sbOpen;renderBuilder();}
 function showBuilder(){document.getElementById('intro').classList.add('hidden');document.getElementById('builder').classList.remove('hidden');B={cur:START,time:600,startTime:600,visited:new Set(),path:[]};renderStartTime();}
 function renderStartTime(){
  document.getElementById('builder').innerHTML=`
@@ -290,14 +297,17 @@ function renderBuilder(){
  let excludedBox = excluded.length ? `<div class="warnbox">${excluded.map(o=>`<div class="exclrow">⛔ <b>${o.p.n}</b>는 ${o.ti.reason} 사유로 제외됨</div>`).join('')}</div>` : '';
  const late=B.time>=20*60+30;
  document.getElementById('builder').innerHTML=`
- <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 날씨도 바뀜(8/16 예보 기반 추정·라이브 아님).</div>
-  <div class="timeadjust">
-   <button class="synctime" onclick="syncNow()">🕐 지금 실제 시각으로 맞추기</button>
-   <button onclick="adjustTime(-15)">-15분</button><button onclick="adjustTime(-5)">-5분</button><button onclick="adjustTime(5)">+5분</button><button onclick="adjustTime(15)">+15분</button><button onclick="adjustTime(30)">+30분</button>
+ <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n} <span class="sbtoggle" onclick="toggleSb()">${sbOpen?'▲ 접기':'▼ 날씨·시각조정'}</span></div>
+  <div class="sbdetail" style="${sbOpen?'':'display:none'}">
+   <div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div>
+   <div class="at">시계가 흐르면 위 날씨도 바뀜(8/16 예보 기반 추정·라이브 아님). 이동시간=넉넉한 추정. 마감 임박해도 짧게 볼 수 있으면 선택 가능(⚠단축표시), 진짜 불가능만 제외.</div>
+   <div class="timeadjust">
+    <button onclick="adjustTime(-15)">-15분</button><button onclick="adjustTime(-5)">-5분</button><button onclick="adjustTime(5)">+5분</button><button onclick="adjustTime(15)">+15분</button><button onclick="adjustTime(30)">+30분</button>
+   </div>
+   <div class="rowmini"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="resetToPlan()" ${B.path.length?'':'disabled'}>📐 계획대로 재계산</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
   </div>
+  <div class="timeadjust" style="margin-top:6px"><button class="synctime" onclick="syncNow()">🕐 지금 실제 시각으로 맞추기</button></div>
  </div>
- <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="resetToPlan()" ${B.path.length?'':'disabled'}>📐 계획대로 재계산</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
- <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정(실제 신호·환승 차이 가능). 마감 임박해도 짧게라도 볼 수 있으면 선택 가능(⚠단축 표시) — 진짜 불가능(정기휴무·L.O.초과)만 제외.</div>
  <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
    ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}
  </div>

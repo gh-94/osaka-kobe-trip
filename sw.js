@@ -1,5 +1,5 @@
 // 오사카·고베 여행 trip.html 오프라인 캐시용 서비스워커 (버튼 트리거 방식)
-const CACHE_NAME = 'osaka-kobe-trip-v20';
+const CACHE_NAME = 'osaka-kobe-trip-v24';
 
 // 필수 파일 — 하나라도 실패하면 설치가 중단됨(그래야 "저장 실패"를 정확히 알 수 있음)
 const CRITICAL_URLS = [

@@ -258,6 +258,16 @@ function syncNow(){
 }
 function adjustTime(delta){B.time+=delta;renderBuilder();}
 function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
+function resetToPlan(){
+ let t=B.startTime||600,cur=START;const newPath=[];
+ for(const s of B.path){
+  const p=BYID[s.id];const tv=travel(cur,p);const rawArr=t+tv.m;const wait=rawArr<(p.o||0);const start=Math.max(rawArr,p.o||0);
+  newPath.push({id:s.id,name:s.name,arr:start,dwell:p.dwell,mode:tv.mode,tv:tv.m,wait,short:false});
+  t=start+p.dwell;cur=p;
+ }
+ B.path=newPath;B.time=t;B.cur=cur;B.visited=new Set(newPath.map(s=>s.id));
+ renderBuilder();
+}
 function optCard(o){const p=o.p;const ti=o.ti;
    let extra='';
    if(ti.wait){const waitMin=Math.round(p.o-(B.time+o.tv.m));extra+=`<div class="waitwarn">⏳ 오픈까지 ${waitMin>=60?Math.round(waitMin/60)+'시간 '+(waitMin%60)+'분':waitMin+'분'} 대기 필요${waitMin>=60?' — 다른 곳 먼저 들르는 것도 방법':''}</div>`;}
@@ -286,7 +296,7 @@ function renderBuilder(){
    <button onclick="adjustTime(-15)">-15분</button><button onclick="adjustTime(-5)">-5분</button><button onclick="adjustTime(5)">+5분</button><button onclick="adjustTime(15)">+15분</button><button onclick="adjustTime(30)">+30분</button>
   </div>
  </div>
- <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
+ <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="resetToPlan()" ${B.path.length?'':'disabled'}>📐 계획대로 재계산</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
  <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정(실제 신호·환승 차이 가능). 마감 임박해도 짧게라도 볼 수 있으면 선택 가능(⚠단축 표시) — 진짜 불가능(정기휴무·L.O.초과)만 제외.</div>
  <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
    ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}

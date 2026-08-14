@@ -235,6 +235,16 @@ function syncNow(){
 }
 function adjustTime(delta){B.time+=delta;renderBuilder();}
 function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
+function resetToPlan(){
+ let t=B.startTime||900,cur=START;const newPath=[];
+ for(const s of B.path){
+  const p=BYID[s.id];const tv=travel(cur,p);const rawArr=t+tv.m;const wait=rawArr<(p.o||0);const start=Math.max(rawArr,p.o||0);
+  newPath.push({id:s.id,name:s.name,arr:start,dwell:p.dwell,mode:tv.mode,tv:tv.m,wait,short:false});
+  t=start+p.dwell;cur=p;
+ }
+ B.path=newPath;B.time=t;B.cur=cur;B.visited=new Set(newPath.map(s=>s.id));
+ renderBuilder();
+}
 // 이 후보를 골랐을 때 앵커(만료 21:00 예약)에 미치는 영향 계산
 function anchorImpact(candStart, actualDwell){
   if(!ANCHOR) return '';
@@ -288,7 +298,7 @@ function renderBuilder(){
   </div>
  </div>
  ${(!anchorReached&&ANCHOR)?`<div class="anchorbox"><div class="at">⭐ ${hh(ANCHOR.time)} ${ANCHOR.name}</div><div class="ad">${anchorNow}<br>동선: ${ANCHOR.route}</div></div>`:''}
- <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
+ <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="resetToPlan()" ${B.path.length?'':'disabled'}>📐 계획대로 재계산</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
  <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정. 마감 임박해도 짧게라도 볼 수 있으면 선택 가능(⚠단축 표시) — 진짜 불가능(정기휴무·L.O.초과)만 제외.</div>
  <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
    ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}

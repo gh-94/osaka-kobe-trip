@@ -231,6 +231,16 @@ function syncNow(){
 }
 function adjustTime(delta){B.time+=delta;renderBuilder();}
 function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
+function resetToPlan(){
+ let t=B.startTime||600,cur=START;const newPath=[];
+ for(const s of B.path){
+  const p=BYID[s.id];const tv=travel(cur,p);const rawArr=t+tv.m;const wait=rawArr<(p.o||0);const start=Math.max(rawArr,p.o||0);
+  newPath.push({id:s.id,name:s.name,arr:start,dwell:p.dwell,mode:tv.mode,tv:tv.m,wait,short:false});
+  t=start+p.dwell;cur=p;
+ }
+ B.path=newPath;B.time=t;B.cur=cur;B.visited=new Set(newPath.map(s=>s.id));
+ renderBuilder();
+}
 function anchorImpactFrom(fromLoc, finish){
   if(!ANCHOR) return '';
   const tv=travel(fromLoc,ANCHOR.loc);
@@ -278,7 +288,7 @@ function renderBuilder(){
   </div>
  </div>
  ${(!anchorReached&&ANCHOR)?`<div class="anchorbox"><div class="at">⭐ ${hh(ANCHOR.time)} ${ANCHOR.name}</div><div class="ad">${anchorNow}<br>동선: ${ANCHOR.route}</div></div>`:''}
- <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
+ <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="resetToPlan()" ${B.path.length?'':'disabled'}>📐 계획대로 재계산</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
  <div class="mini">오사카 내 이동시간=좌표 직선거리 기반 추정. 오사카↔고베는 JR신쾌속 기준 고정 45분. 마감/L.O. 임박해도 짧게라도 볼 수 있으면 선택 가능(⚠단축 표시) — 진짜 불가능(정기휴무·L.O.초과)만 제외.</div>
  <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
    ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}

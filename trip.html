@@ -398,5 +398,15 @@ document.querySelectorAll('.tab').forEach((t) => {
   t.addEventListener('click', () => toTopBtn.classList.remove('show'));
 });
 
+// 오프라인 대비: 화면엔 아무것도 안 보이지만, 인터넷 켜진 상태로 페이지를 열면
+// 조용히 백그라운드에서 문서·플래너를 캐싱해둠. 이후 인터넷 없어도 그대로 열림(사진·지도 제외).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body></html>

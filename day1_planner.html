@@ -78,6 +78,10 @@ h1{font-size:20px;margin:6px 0 2px}
 .optb.excl{cursor:default}
 .pathitem{font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
 .pathitem b{color:var(--accent2)}
+.synctime{background:#1e3a2e;border:1px solid #2f5c46;color:#4ade80;border-radius:12px;padding:9px 12px;font-size:13px;cursor:pointer;touch-action:manipulation}
+.timeadjust{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.timeadjust button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:99px;padding:6px 12px;font-size:12.5px;cursor:pointer;touch-action:manipulation}
+.timeadjust button:hover{border-color:var(--accent2)}
 a{color:var(--accent2)}
 </style>
 </head>
@@ -139,6 +143,7 @@ const DB=[
  {id:"P043",n:"SUGU",reg:"도야마초",cat:"게이바",lat:34.7036148,lng:135.5032088,o:1200,c:1740,dwell:60,tag:"로컬 카운터바",desc:"도야마초 작은 로컬 게이바.",note:"월요일 휴무 — 토요일인 오늘 영업"},
  {id:"P121",n:"EAGLE OSAKA",reg:"도야마초",cat:"게이바",lat:34.7040952,lng:135.5041335,o:1200,c:1740,dwell:60,tag:"서일본 최대",desc:"서일본 최대 게이바/클럽. 캐시리스 결제, 진입장벽 낮음.",note:"토요일 주말 DJ파티"},
  {id:"P041",n:"DEER",reg:"도야마초",cat:"게이바",lat:34.7037106,lng:135.5043945,o:1200,c:1740,dwell:60,tag:"이벤트 바",desc:"토요일·공휴일 중심 파티성 이벤트 바.",note:"토요일인 오늘 영업 유력"},
+ {id:"mannen",n:"Mannen(まんねん) 해장라멘",reg:"도야마초",cat:"해장(심야)",lat:34.7028,lng:135.5039,o:660,c:1710,dwell:35,tag:"라멘·교자(연중무휴)",desc:"도야마초 코앞, 라멘·교자 전문점. 새벽까지 영업.",note:"연중무휴, 일요일(오늘밤~월요일 새벽)은 04:30까지"},
 ];
 const BYID={};DB.forEach(p=>BYID[p.id]=p);
 const DETAIL={
@@ -163,6 +168,7 @@ const DETAIL={
  P121:`<b>뭐하는 곳</b>: 서일본 최대 게이바/클럽(2024.3 오픈). 1F 댄스플로어.<br><b>결제</b>: 캐시리스(카드·전자머니·QR).<br><b>판단</b>: 첫 방문 진입장벽 낮은 편. 토요일 주말 파티.`,
  P121_alt:``,
  P041:`<b>뭐하는 곳</b>: 토요일·공휴일 중심 파티성 이벤트 바.<br><b>판단</b>: 토요일인 오늘 영업 유력. 명칭 매핑 현장 재확인.`,
+ mannen:`<b>뭐하는 곳</b>: 라멘·교자 전문점(まんねん 梅田本店). 도야마초 게이바 거리 바로 코앞.<br><b>영업</b>: 연중무휴. 평일 11:00~다음날 06:00, 금·토 ~07:00, 일 ~04:30.<br><b>판단</b>: 게이바에서 늦게까지 놀고 나와도 거의 항상 열려있는 완벽한 해장 코스.`,
 };
 const START={n:"우메다(APA호텔·숙소)",lat:34.7025,lng:135.4959};
 function hh(m){m=Math.round(m);return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
@@ -193,6 +199,14 @@ function renderStartTime(){
  </div>`;
 }
 function setStart(t){B.startTime=t;B.time=t;renderBuilder();}
+function syncNow(){
+ const d=new Date();
+ let raw=d.getHours()*60+d.getMinutes();
+ while(raw<B.time-360)raw+=1440; // 자정 넘어갔으면 다음날로 보정
+ B.time=raw;
+ renderBuilder();
+}
+function adjustTime(delta){B.time+=delta;renderBuilder();}
 function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
 function optCard(o){const p=o.p;return `<div class="optb" onclick="openDetail('${p.id}')">
    <div class="h">▶ ${p.n} <span class="mini">(약 ${p.dwell}분 머묾)</span></div>
@@ -205,14 +219,19 @@ function renderBuilder(){
  const opts=DB.filter(p=>!B.visited.has(p.id)).map(p=>{const tv=travel(B.cur,p);const arr=B.time+tv.m;const ok=arr<p.c-15;return {p,tv,arr,ok,wait:arr<p.o,reason:!ok?`도착 ${hh(arr)}인데 ${hh(p.c)} 마감`:''};});
  const feasible=opts.filter(o=>o.ok).sort((a,b)=>a.arr-b.arr);
  const excluded=opts.filter(o=>!o.ok).sort((a,b)=>a.tv.m-b.tv.m);
- const cats=["공원","카페·디저트","전망대","신사","쇼핑(실내)","전망·관람차","저녁(야키니쿠)","저녁(대안)","게이바"];
+ const cats=["공원","카페·디저트","전망대","신사","쇼핑(실내)","전망·관람차","저녁(야키니쿠)","저녁(대안)","게이바","해장(심야)"];
  let sec=cats.map(c=>{const l=feasible.filter(o=>o.p.cat===c);if(!l.length)return'';return `<div class="catsec"><div class="cathd">${c} · ${l.length}</div><div class="optgrid">${l.map(optCard).join('')}</div></div>`;}).join('');
  let path=B.path.map((s,i)=>`<div class="pathitem"><b>${hh(s.arr)}</b> ${s.name} <span class="mini">(${s.dwell}분${s.wait?'·오픈대기':''} · ${s.mode} ${s.tv}분)</span> <a href="javascript:void(0)" onclick="undoTo(${i})" class="mini" style="color:var(--bad)">✕여기로 되돌리기</a></div>`).join('')||'<div class="mini">아직 없음 — 첫 목적지를 골라보세요.</div>';
  let eo=excluded.slice(0,6).map(o=>`<div class="optb excl"><div class="h">✕ ${o.p.n}</div><div class="m">${o.reason} (${o.tv.mode} ${o.tv.m}분)</div></div>`).join('');
  const manryoTime=B.path.find(s=>s.id==='P001');
  const willMissManryo=!manryoTime && B.time>1230 && !B.visited.has('P001');
  document.getElementById('builder').innerHTML=`
- <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 날씨도 바뀜(8/15 예보 기반 추정·라이브 아님). 마감 걸리면 자동 제외.</div></div>
+ <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 날씨도 바뀜(8/15 예보 기반 추정·라이브 아님). 마감 걸리면 자동 제외.</div>
+  <div class="timeadjust">
+   <button class="synctime" onclick="syncNow()">🕐 지금 실제 시각으로 맞추기</button>
+   <button onclick="adjustTime(-15)">-15분</button><button onclick="adjustTime(-5)">-5분</button><button onclick="adjustTime(5)">+5분</button><button onclick="adjustTime(15)">+15분</button><button onclick="adjustTime(30)">+30분</button>
+  </div>
+ </div>
  <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
  <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정. 머무는시간=구경·대기 포함 넉넉히. 영업시간 2026-08-14 확인·추정 혼재 → 현장 재확인.</div>
  ${willMissManryo?'<div class="warnbox">⏰ 21:00 <b>만료 예약</b>이 있어요 — 지금 페이스면 늦을 수 있으니 이동시간 역산해서 챙기세요.</div>':''}
@@ -279,7 +298,7 @@ const QS=[
    {v:"eagle",t:"대형·캐시리스(EAGLE)",p:"진입장벽 낮음",c:"—"},
    {v:"skip",t:"안 감",p:"일찍 마무리",c:"—"}]},
 ];
-const P={P139:BYID.P139,P038:BYID.P038,P036:BYID.P036,P015:BYID.P015,P032:BYID.P032,P141:BYID.P141,P138:BYID.P138,P140:BYID.P140,P008:BYID.P008,P057:BYID.P057,P090:BYID.P090,P088:BYID.P088,P018:BYID.P018,P001:BYID.P001,P014:BYID.P014,P011:BYID.P011,P012:BYID.P012,P043:BYID.P043,P121:BYID.P121,P041:BYID.P041};
+const P={P139:BYID.P139,P038:BYID.P038,P036:BYID.P036,P015:BYID.P015,P032:BYID.P032,P141:BYID.P141,P138:BYID.P138,P140:BYID.P140,P008:BYID.P008,P057:BYID.P057,P090:BYID.P090,P088:BYID.P088,P018:BYID.P018,P001:BYID.P001,P014:BYID.P014,P011:BYID.P011,P012:BYID.P012,P043:BYID.P043,P121:BYID.P121,P041:BYID.P041,mannen:BYID.mannen};
 let A={},cur=0;
 const PRESETS={
  A:{focus:'cafe',tenmangu:'later',cafe:'amanto',view:'skip',dinner:'manryo',bar:'local'},
@@ -316,7 +335,7 @@ function buildResult(presetKey){
  T.push(stop(slot(30),'숙소 복귀·휴식·샤워',''));
  let db='';if(dinner==='manryo')db=pcard('P001');else db=pcard('P014','만료 예약 취소 시 대안');
  T.push(stop('21:00-22:50','저녁 야키니쿠(만료 확정예약)',db));
- if(bar!=='skip'){let bb=bar==='local'?pcard('P043')+pcard('P041','SUGU와 취향껏'):pcard('P121');T.push(stop(hh(clock+15)+'-23:30','도야마초 게이바',bb));}
+ if(bar!=='skip'){let bb=bar==='local'?pcard('P043')+pcard('P041','SUGU와 취향껏'):pcard('P121');T.push(stop(hh(clock+15)+'-23:30','도야마초 게이바',bb));clock=Math.max(clock+45,1410);T.push(stop(hh(clock)+'-'+hh(clock+35),'🍜 해장: Mannen 라멘·교자(연중무휴)',pcard('mannen')));}
  T.push(stop(hh(clock>1440?clock-1440:clock),'숙소 복귀',''));
  if(dinner==='manryo')W.push('만료는 <b>21:00 확정 예약</b> — 이 시각에 늦지 않게 이전 일정 역산 필수.');
  if(view==='both'&&cafe!=='skip')W.push('카페+전망대 둘 다 깊게 하면 21시 저녁까지 <b>시간이 빠듯</b>할 수 있어요 — 하나 줄이는 것도 방법.');

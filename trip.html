@@ -90,6 +90,7 @@ iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--li
 </div>
 <div class="tabbar">
   <div class="tabs" id="tabs">
+    <div class="tab" data-tab="route">🗺 추천동선</div>
     <div class="tab" data-tab="index">✅ 체크리스트</div>
     <div class="tab" data-tab="day1">DAY1</div>
     <div class="tab" data-tab="planner1">🗺 Day1 플래너</div>
@@ -106,6 +107,7 @@ iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--li
   </div>
 </div>
 <div class="body">
+  <div class="pane" data-pane="route"><div class="loading">불러오는 중…</div></div>
   <div class="pane" data-pane="index"><div class="loading">불러오는 중…</div></div>
   <div class="pane" data-pane="day1"><div class="loading">불러오는 중…</div></div>
   <div class="pane" data-pane="day2"><div class="loading">불러오는 중…</div></div>
@@ -152,6 +154,7 @@ iframe.planner{width:100%;height:100%;min-height:480px;border:1px solid var(--li
 
 <script>
 const FILES = {
+  route: '00_recommended_routes.md',
   index: '00_trip_index_checklist.md',
   day1: 'day1_osaka_master.md',
   day2: 'day2_osaka_master.md',
@@ -161,7 +164,7 @@ const FILES = {
   phrases: 'japanese_phrases.md'
 };
 const loaded = {};
-const VALID_TABS = ['index','day1','planner1','day2','planner','day3','planner3','day4','planner4','context','phrases','priority','map'];
+const VALID_TABS = ['route','index','day1','planner1','day2','planner','day3','planner3','day4','planner4','context','phrases','priority','map'];
 
 function loadMd(key){
   if(loaded[key]) return Promise.resolve();

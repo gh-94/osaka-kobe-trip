@@ -82,6 +82,17 @@ h1{font-size:20px;margin:6px 0 2px}
 .timeadjust{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .timeadjust button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:99px;padding:6px 12px;font-size:12.5px;cursor:pointer;touch-action:manipulation}
 .timeadjust button:hover{border-color:var(--accent2)}
+.anchorbox{background:linear-gradient(135deg,#2a1f14,#1a2a1f);border:1px solid #4a3a24;border-radius:14px;padding:13px 15px;margin:10px 0;font-size:13px}
+.anchorbox .at{font-size:15px;font-weight:800;color:#ffce7a}
+.anchorbox .ad{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.5}
+.shortwarn{background:#332615;border:1px solid #5c4620;border-radius:8px;padding:6px 9px;margin-top:6px;font-size:12px;color:#ffd58a}
+.waitwarn{background:#152a33;border:1px solid #205c5c;border-radius:8px;padding:6px 9px;margin-top:6px;font-size:12px;color:#8adfff}
+.exclrow{font-size:12.5px;color:#ff9a8a;padding:5px 0;border-bottom:1px dashed var(--line)}
+.exclrow:last-child{border-bottom:none}
+.aimpact{font-size:11.5px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+.aimpact.ok{color:#7ad88a}
+.aimpact.warn{color:#ffce7a}
+.aimpact.danger{color:#ff7a7a}
 a{color:var(--accent2)}
 </style>
 </head>
@@ -171,11 +182,27 @@ const DETAIL={
  mannen:`<b>뭐하는 곳</b>: 라멘·교자 전문점(まんねん 梅田本店). 도야마초 게이바 거리 바로 코앞.<br><b>영업</b>: 연중무휴. 평일 11:00~다음날 06:00, 금·토 ~07:00, 일 ~04:30.<br><b>판단</b>: 게이바에서 늦게까지 놀고 나와도 거의 항상 열려있는 완벽한 해장 코스.`,
 };
 const START={n:"우메다(APA호텔·숙소)",lat:34.7025,lng:135.4959};
-function hh(m){m=Math.round(m);return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+const ANCHOR={name:"만료 미나미모리마치점 (야키니쿠 확정예약)",time:1260,loc:{lat:34.6962995,lng:135.5096928},safeBuffer:20,latestBuffer:5,route:"우메다/도야마초/나카자키초 → 東梅田역 → 다니마치선(보라) → 南森町역 → 도보"};
+function hh(m){m=Math.round(((m%1440)+1440)%1440);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
 function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 function travel(a,b){const d=hav(a,b);let m,mode;if(d<1.0){m=Math.max(5,Math.round(d*14/5)*5);mode='🚶 도보';}else{m=Math.round((d*4.5+9)/5)*5;mode='🚇 지하철';}return{m,mode,d};}
-function hoursText(p){if(p.o===0&&p.c>=1440)return'🕒 상시 이용(24시간/거리)';return `🕒 오늘(토) ${hh(p.o)}-${hh(p.c)} 영업`;}
-function weatherFeel(m){const h=m/60;let d;
+function hoursText(p){if(p.o===0&&p.c===0)return'⛔ 오늘 정기휴무';if(p.o===0&&p.c>=1440)return'🕒 상시 이용(24시간/거리)';return `🕒 오늘(토) ${hh(p.o)}-${hh(p.c)}${p.lo!=null?' (L.O.'+hh(p.lo)+')':''} 영업`;}
+// ===== 핵심 판정: 마감 임박해도 "짧게라도 볼 수 있으면" 선택 가능하게. 진짜 불가능한 경우만 제외 =====
+function timingInfo(p, rawArr){
+  const closedAllDay = (p.o===0 && p.c===0);
+  const cutoff = (p.lo!=null) ? p.lo : p.c; // 식당은 라스트오더가 진짜 마감선
+  const start = Math.max(rawArr, p.o||0);
+  const wait = rawArr < (p.o||0);
+  const ok = !closedAllDay && start < cutoff;
+  const available = (p.c>=1440) ? Infinity : Math.max(0, cutoff-start);
+  const short = ok && isFinite(available) && available < p.dwell;
+  const actualDwell = ok ? Math.max(5, Math.min(p.dwell, isFinite(available)?available:p.dwell)) : 0;
+  let reason='';
+  if(closedAllDay) reason='오늘 정기휴무';
+  else if(!ok) reason=(p.lo!=null)?`L.O. ${hh(cutoff)} 지남(도착 ${hh(start)})`:`마감 ${hh(cutoff)} 지남(도착 ${hh(start)})`;
+  return {closedAllDay, ok, wait, available, short, actualDwell, start, reason};
+}
+function weatherFeel(m){const h=(((m%1440)+1440)%1440)/60;let d;
  if(h<12) d={i:'☀️',temp:'30-33℃',feelt:'체감 34℃',hum:70,pop:20,rain:'0mm',t:'오전~정오 대체로 맑음·폭염. 도착·이동은 이 시간대가 쾌적'};
  else if(h<15) d={i:'🌥️',temp:'33-34℃',feelt:'체감 36℃+',hum:65,pop:50,rain:'0~1mm',t:'한낮 최고기온, 후텁지근. 슬슬 흐려짐 — 카페·실내 섞기'};
  else if(h<18) d={i:'🌧️',temp:'29-31℃',feelt:'체감 33℃',hum:80,pop:85,rain:'0.7~1mm/h',t:'⚠오후 강수확률 85% — 비 올 확률 높음. 우산 필수, 카페·실내 위주로'};
@@ -208,58 +235,88 @@ function syncNow(){
 }
 function adjustTime(delta){B.time+=delta;renderBuilder();}
 function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
-function optCard(o){const p=o.p;return `<div class="optb" onclick="openDetail('${p.id}')">
-   <div class="h">▶ ${p.n} <span class="mini">(약 ${p.dwell}분 머묾)</span></div>
+// 이 후보를 골랐을 때 앵커(만료 21:00 예약)에 미치는 영향 계산
+function anchorImpact(candStart, actualDwell){
+  if(!ANCHOR) return '';
+  const finish = candStart + actualDwell;
+  const tv = travel({lat:0,lng:0},ANCHOR.loc); // placeholder, 실제는 후보 좌표 필요해서 호출부에서 재계산
+  return null; // 아래 optCard/openDetail에서 직접 계산
+}
+function anchorImpactFrom(fromLoc, finish){
+  if(!ANCHOR) return '';
+  const tv=travel(fromLoc,ANCHOR.loc);
+  const safe=ANCHOR.time-tv.m-ANCHOR.safeBuffer;
+  const latest=ANCHOR.time-tv.m-ANCHOR.latestBuffer;
+  if(finish<=safe){
+    return `<div class="aimpact ok">📌 이곳 예상종료 ${hh(finish)} → ${ANCHOR.name.split(' ')[0]} 안전빵 출발 ${hh(safe)} → 늦어도 ${hh(latest)} (약 ${Math.round(safe-finish)}분 여유)</div>`;
+  } else if(finish<=latest){
+    return `<div class="aimpact warn">⚠ 안전빵(${hh(safe)})은 넘기지만, 늦어도 ${hh(latest)}엔 출발하면 예약 시간 맞출 수 있어요</div>`;
+  } else {
+    return `<div class="aimpact danger">🚨 이대로면 21:00 예약에 늦을 가능성 커요 — 짧게 보거나 스킵 권장 (늦어도 ${hh(latest)} 출발이었음)</div>`;
+  }
+}
+function optCard(o){const p=o.p;const ti=o.ti;
+   let extra='';
+   if(ti.wait){const waitMin=Math.round((p.o)-((B.time+o.tv.m)));extra+=`<div class="waitwarn">⏳ 오픈까지 ${waitMin>=60?Math.round(waitMin/60)+'시간 '+ (waitMin%60) +'분':waitMin+'분'} 대기 필요${waitMin>=60?' — 다른 곳 먼저 들르는 것도 방법':''}</div>`;}
+   if(ti.short){extra+=`<div class="shortwarn">⚠ 도착 후 최대 ${ti.actualDwell}분만 이용 가능 (평소 약 ${p.dwell}분보다 짧음)</div>`;}
+   const finish = ti.start + ti.actualDwell;
+   const aimp = ANCHOR ? anchorImpactFrom(p, finish) : '';
+   return `<div class="optb" onclick="openDetail('${p.id}')">
+   <div class="h">▶ ${p.n} <span class="mini">(${ti.short?'단축 '+ti.actualDwell:'약 '+p.dwell}분 머묾)</span></div>
    <div class="dd">${p.desc||''}</div>
    <div class="m">${hoursText(p)}</div>
-   <div class="m">${o.tv.mode} ${o.tv.m}분 → 도착 ${hh(o.arr)}${o.wait?' <span class="w">(오픈 '+hh(p.o)+' 대기)</span>':''}</div>
+   <div class="m">${o.tv.mode} ${o.tv.m}분 → 도착 ${hh(B.time+o.tv.m)}</div>
+   ${extra}
    ${p.note?`<div class="d">💡 ${p.note}</div>`:''}
+   ${aimp}
   </div>`;}
 function renderBuilder(){
- const opts=DB.filter(p=>!B.visited.has(p.id)).map(p=>{const tv=travel(B.cur,p);const arr=B.time+tv.m;const ok=arr<p.c-15;return {p,tv,arr,ok,wait:arr<p.o,reason:!ok?`도착 ${hh(arr)}인데 ${hh(p.c)} 마감`:''};});
- const feasible=opts.filter(o=>o.ok).sort((a,b)=>a.arr-b.arr);
- const excluded=opts.filter(o=>!o.ok).sort((a,b)=>a.tv.m-b.tv.m);
+ const opts=DB.filter(p=>!B.visited.has(p.id)).map(p=>{const tv=travel(B.cur,p);const rawArr=B.time+tv.m;const ti=timingInfo(p,rawArr);return {p,tv,ti};});
+ const feasible=opts.filter(o=>o.ti.ok).sort((a,b)=>a.ti.start-b.ti.start);
+ const excluded=opts.filter(o=>!o.ti.ok);
  const cats=["공원","카페·디저트","전망대","신사","쇼핑(실내)","전망·관람차","저녁(야키니쿠)","저녁(대안)","게이바","해장(심야)"];
  let sec=cats.map(c=>{const l=feasible.filter(o=>o.p.cat===c);if(!l.length)return'';return `<div class="catsec"><div class="cathd">${c} · ${l.length}</div><div class="optgrid">${l.map(optCard).join('')}</div></div>`;}).join('');
- let path=B.path.map((s,i)=>`<div class="pathitem"><b>${hh(s.arr)}</b> ${s.name} <span class="mini">(${s.dwell}분${s.wait?'·오픈대기':''} · ${s.mode} ${s.tv}분)</span> <a href="javascript:void(0)" onclick="undoTo(${i})" class="mini" style="color:var(--bad)">✕여기로 되돌리기</a></div>`).join('')||'<div class="mini">아직 없음 — 첫 목적지를 골라보세요.</div>';
- let eo=excluded.slice(0,6).map(o=>`<div class="optb excl"><div class="h">✕ ${o.p.n}</div><div class="m">${o.reason} (${o.tv.mode} ${o.tv.m}분)</div></div>`).join('');
- const manryoTime=B.path.find(s=>s.id==='P001');
- const willMissManryo=!manryoTime && B.time>1230 && !B.visited.has('P001');
+ let path=B.path.map((s,i)=>`<div class="pathitem"><b>${hh(s.arr)}</b> ${s.name} <span class="mini">(${s.dwell}분${s.wait?'·오픈대기':''}${s.short?'·단축':''} · ${s.mode} ${s.tv}분)</span> <a href="javascript:void(0)" onclick="undoTo(${i})" class="mini" style="color:var(--bad)">✕여기로 되돌리기</a></div>`).join('')||'<div class="mini">아직 없음 — 첫 목적지를 골라보세요.</div>';
+ let excludedBox = excluded.length ? `<div class="warnbox">${excluded.map(o=>`<div class="exclrow">⛔ <b>${o.p.n}</b>는 ${o.ti.reason} 사유로 제외됨</div>`).join('')}</div>` : '';
+ const anchorReached = ANCHOR ? B.path.some(s=>s.id==='P001') : false;
+ const anchorNow = ANCHOR ? anchorImpactFrom(B.cur, B.time) : '';
  document.getElementById('builder').innerHTML=`
- <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 날씨도 바뀜(8/15 예보 기반 추정·라이브 아님). 마감 걸리면 자동 제외.</div>
+ <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 날씨도 바뀜(8/15 예보 기반 추정·라이브 아님).</div>
   <div class="timeadjust">
    <button class="synctime" onclick="syncNow()">🕐 지금 실제 시각으로 맞추기</button>
    <button onclick="adjustTime(-15)">-15분</button><button onclick="adjustTime(-5)">-5분</button><button onclick="adjustTime(5)">+5분</button><button onclick="adjustTime(15)">+15분</button><button onclick="adjustTime(30)">+30분</button>
   </div>
  </div>
+ ${(!anchorReached&&ANCHOR)?`<div class="anchorbox"><div class="at">⭐ ${hh(ANCHOR.time)} ${ANCHOR.name}</div><div class="ad">${anchorNow}<br>동선: ${ANCHOR.route}</div></div>`:''}
  <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
- <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정. 머무는시간=구경·대기 포함 넉넉히. 영업시간 2026-08-14 확인·추정 혼재 → 현장 재확인.</div>
- ${willMissManryo?'<div class="warnbox">⏰ 21:00 <b>만료 예약</b>이 있어요 — 지금 페이스면 늦을 수 있으니 이동시간 역산해서 챙기세요.</div>':''}
+ <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정. 마감 임박해도 짧게라도 볼 수 있으면 선택 가능(⚠단축 표시) — 진짜 불가능(정기휴무·L.O.초과)만 제외.</div>
  <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
    ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}
  </div>
+ ${excludedBox}
  <div class="card"><div class="q">▶ 갈 수 있는 곳 (${feasible.length})</div>
-   <div class="qhint">카테고리별. 각 카드에 <b>어떤 곳인지·소요·이동·도착·마감</b> 표기.</div>
+   <div class="qhint">카테고리별. 각 카드에 <b>어떤 곳인지·소요·이동·도착·마감·예약 영향</b> 표기.</div>
    ${sec||'<div class="mini">남은 후보가 없어요.</div>'}
-   ${eo?`<div class="qhint" style="margin-top:14px">⛔ 지금 가면 마감/불가 (참고):</div><div class="optgrid">${eo}</div>`:''}
  </div>
  <div class="row"><button class="btn" onclick="finishB()">🌃 마무리·요약</button></div>`;
  window.scrollTo(0,0);
 }
-function pickB(id){const p=BYID[id];const tv=travel(B.cur,p);let arr=B.time+tv.m;const wait=arr<p.o;if(wait)arr=p.o;B.path.push({id,name:p.n,arr,dwell:p.dwell,mode:tv.mode,tv:tv.m,wait});B.time=arr+p.dwell;B.cur=p;B.visited.add(id);renderBuilder();}
-function openDetail(id){window._did=id;const p=BYID[id];const tv=travel(B.cur,p);const arr=B.time+tv.m;const feasible=arr<p.c-15;
+function pickB(id){const p=BYID[id];const tv=travel(B.cur,p);const rawArr=B.time+tv.m;const ti=timingInfo(p,rawArr);if(!ti.ok)return;B.path.push({id,name:p.n,arr:ti.start,dwell:ti.actualDwell,mode:tv.mode,tv:tv.m,wait:ti.wait,short:ti.short});B.time=ti.start+ti.actualDwell;B.cur=p;B.visited.add(id);renderBuilder();}
+function openDetail(id){window._did=id;const p=BYID[id];const tv=travel(B.cur,p);const rawArr=B.time+tv.m;const ti=timingInfo(p,rawArr);
+ const finish=ti.start+ti.actualDwell;
+ const aimp = ANCHOR ? anchorImpactFrom(p,finish) : '';
  document.getElementById('detailBody').innerHTML=`
   <div class="mt">${p.n}</div>
-  <div class="ms">${p.tag} · ${hoursText(p)}<br>${tv.mode} ${tv.m}분 → 도착 ${hh(arr)}${arr<p.o?' (오픈 '+hh(p.o)+' 대기)':''} · 약 ${p.dwell}분 머묾${!feasible?' <span class="b">· ⛔지금 가면 마감</span>':''}</div>
-  <div class="mbody">${DETAIL[id]||p.desc||''}${p.note?`<br><br>💡 ${p.note}`:''}</div>
-  <div class="mrow">${feasible?'<button class="btn" onclick="selectDetail()">✅ 선택(경로에 추가)</button>':'<button class="btn" disabled>⛔ 마감으로 불가</button>'}<button class="btn ghost" onclick="closeDetail()">닫기</button></div>`;
+  <div class="ms">${p.tag} · ${hoursText(p)}<br>${tv.mode} ${tv.m}분 → 도착 ${hh(rawArr)}${ti.wait?' (오픈 '+hh(p.o)+' 대기)':''} · ${ti.short?'단축 '+ti.actualDwell:'약 '+p.dwell}분 머묾${!ti.ok?' <span class="b">· ⛔'+ti.reason+'</span>':''}</div>
+  <div class="mbody">${DETAIL[id]||p.desc||''}${p.note?`<br><br>💡 ${p.note}`:''}${ti.short?`<br><br>⚠ 도착 후 최대 ${ti.actualDwell}분만 이용 가능(평소 약 ${p.dwell}분보다 짧음)`:''}${aimp?'<br>'+aimp:''}</div>
+  <div class="mrow">${ti.ok?'<button class="btn" onclick="selectDetail()">✅ 선택(경로에 추가)</button>':'<button class="btn" disabled>⛔ '+ti.reason+'</button>'}<button class="btn ghost" onclick="closeDetail()">닫기</button></div>`;
  document.getElementById('detail').classList.remove('hidden');}
 function closeDetail(){document.getElementById('detail').classList.add('hidden');}
 function selectDetail(){const id=window._did;closeDetail();pickB(id);}
 function undoB(silent){const last=B.path.pop();if(!last){if(!silent)renderBuilder();return;}B.visited.delete(last.id);if(B.path.length){const prev=B.path[B.path.length-1];B.cur=BYID[prev.id];B.time=prev.arr+prev.dwell;}else{B.cur=START;B.time=B.startTime||900;}if(!silent)renderBuilder();}
 function undoTo(i){while(B.path.length>i){undoB(true);}renderBuilder();}
 function finishB(){
- let path=B.path.map(s=>`<div class="pathitem"><b>${hh(s.arr)}-${hh(s.arr+s.dwell)}</b> ${s.name} <span class="mini">(${BYID[s.id].tag} · ${s.mode} ${s.tv}분${s.wait?' · 오픈대기':''})</span></div>`).join('')||'<div class="mini">경로 없음</div>';
+ let path=B.path.map(s=>`<div class="pathitem"><b>${hh(s.arr)}-${hh(s.arr+s.dwell)}</b> ${s.name} <span class="mini">(${BYID[s.id].tag} · ${s.mode} ${s.tv}분${s.wait?' · 오픈대기':''}${s.short?' · 단축':''})</span></div>`).join('')||'<div class="mini">경로 없음</div>';
  let visitedRegions=[...new Set(B.path.map(s=>BYID[s.id].reg))];
  document.getElementById('builder').innerHTML=`
  <div class="typebox"><div class="tt">🗺 내가 짠 Day1 경로</div><div class="td">${B.path.length}곳 · 종료 ${hh(B.time)} · ${visitedRegions.join(' → ')}</div></div>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Day4 고베→간사이공항 인터랙티브 플래너</title>
+<style>
+:root{--bg:#0f1216;--card:#181c22;--card2:#1e242c;--line:#2a313a;--text:#e8eaed;--muted:#9aa4b0;--accent:#ff7a59;--accent2:#5ac8fa;--good:#4ade80;--warn:#fbbf24;--bad:#f87171;--pill:#242b34}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.5}
+.wrap{max-width:740px;margin:0 auto;padding:18px 16px 80px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
+.q{font-size:17px;font-weight:700;margin-bottom:4px}
+.qhint{color:var(--muted);font-size:13px;margin-bottom:12px}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:.12s;font-size:15px}
+.opt:hover{border-color:var(--accent)}
+.opt b{display:block;margin-bottom:2px}
+.btn{background:var(--accent);color:#1a1206;border:none;border-radius:12px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.mini{padding:9px 12px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.typebox{background:linear-gradient(135deg,#26201d,#1a2430);border:1px solid var(--line);border-radius:16px;padding:18px}
+.typebox .tt{font-size:22px;font-weight:800}.typebox .td{color:var(--muted);font-size:14px;margin-top:4px}
+.stop{border-left:2px solid var(--line);padding:0 0 16px 16px;position:relative;margin-left:6px}
+.stop::before{content:"";position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.stop .tm{font-weight:700;color:var(--accent2);font-size:14px}
+.stop .ac{font-weight:700;margin:1px 0 6px}
+.place{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:7px 0}
+.place .pn{font-weight:700;font-size:14.5px}.place .pf{color:var(--muted);font-size:12.5px;margin-top:2px}
+.note{background:#1a2430;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;margin:12px 0;color:#cfe3f5}
+.warnbox{background:#2a1e1a;border:1px solid #5a3a2a;border-radius:12px;padding:12px 14px;font-size:13px;margin:12px 0;color:#ffd9c2}
+.hidden{display:none}
+.mini{color:var(--muted);font-size:12px;margin-top:6px}
+.statusbar{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#1a2430,#26201d);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.statusbar .now{font-size:18px;font-weight:800;color:var(--accent2)}
+.optb{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin:8px 0;cursor:pointer;transition:.12s;position:relative}
+.optb:hover{border-color:var(--accent)}
+.optb .h{font-weight:700;font-size:15px}
+.optb .m{font-size:12.5px;color:var(--accent2);margin-top:3px}
+.optb .d{font-size:12px;color:var(--muted);margin-top:3px}
+.optgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:9px}
+.catsec{margin:10px 0}
+.cathd{font-size:12.5px;color:var(--accent2);font-weight:700;margin:10px 0 4px;border-bottom:1px solid var(--line);padding-bottom:3px}
+.wf{font-size:12.5px;color:#ffd9a8;margin-top:5px;line-height:1.45}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+.overlay.hidden{display:none}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:520px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .mt{font-size:19px;font-weight:800}
+.modal .ms{color:var(--muted);font-size:12.5px;margin:3px 0 12px}
+.modal .mbody{font-size:13.5px;line-height:1.65}
+.modal .mrow{display:flex;gap:10px;margin-top:16px}
+.optb::after{content:"자세히 ›";position:absolute;right:11px;bottom:9px;font-size:11px;color:var(--accent2)}
+.pathitem{font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.pathitem b{color:var(--accent2)}
+a{color:var(--accent2)}
+.anchorbox{background:linear-gradient(135deg,#2a1f14,#1a2a1f);border:1px solid #4a3a24;border-radius:14px;padding:13px 15px;margin:10px 0;font-size:13px}
+.anchorbox .at{font-size:15px;font-weight:800;color:#ffce7a}
+.anchorbox .ad{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.5}
+.shortwarn{background:#332615;border:1px solid #5c4620;border-radius:8px;padding:6px 9px;margin-top:6px;font-size:12px;color:#ffd58a}
+.waitwarn{background:#152a33;border:1px solid #205c5c;border-radius:8px;padding:6px 9px;margin-top:6px;font-size:12px;color:#8adfff}
+.exclrow{font-size:12.5px;color:#ff9a8a;padding:5px 0;border-bottom:1px dashed var(--line)}
+.exclrow:last-child{border-bottom:none}
+.aimpact{font-size:11.5px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+.aimpact.ok{color:#7ad88a}
+.aimpact.warn{color:#ffce7a}
+.aimpact.danger{color:#ff7a7a}
+.timeadjust{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.timeadjust button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:99px;padding:6px 12px;font-size:12.5px;cursor:pointer;touch-action:manipulation}
+.synctime{background:#1e3a2e;border:1px solid #2f5c46;color:#4ade80;border-radius:12px;padding:9px 12px;font-size:13px;cursor:pointer;touch-action:manipulation}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎡 Day4 고베→간사이공항 인터랙티브 플래너</h1>
+<div class="sub">8/18(화) · 이날 1순위는 <b>"비행기 안 놓치기"</b> — TW-306 19:30 KIX 출발 기준 전부 역산</div>
+
+<div id="intro" class="card">
+  <div class="q">경로 빌더로 바로 시작</div>
+  <div class="qhint">이날은 프리셋보다 <b>실시간 역산</b>이 핵심이라 빌더 하나로 통일했어요. 산노미야역 도착 기준 <b>안전빵 14:20 / 늦어도 14:35</b>(포트라이너 14:28/14:40편)로 계산돼요.</div>
+  <div class="row"><button class="btn" onclick="showBuilder()">🗺 경로 빌더 시작</button></div>
+</div>
+
+<div id="builder" class="hidden"></div>
+<div id="detail" class="overlay hidden" onclick="if(event.target===this)closeDetail()"><div class="modal" id="detailBody"></div></div>
+</div>
+
+<script>
+const DB=[
+ {id:"P004",n:"하버랜드 공원(낮)",reg:"하버랜드",cat:"산책",lat:34.677153,lng:135.181897,o:0,c:1440,dwell:40,tag:"바다뷰(낮)",desc:"전날 밤 본 곳을 낮에 BE KOBE·바다뷰로. 호텔 근처.",note:"체크아웃 전후 가볍게"},
+ {id:"kitano",n:"기타노 이진칸 거리",reg:"기타노",cat:"관광(선택)",lat:34.6980,lng:135.1943,o:0,c:1440,dwell:60,tag:"서양식 저택 거리",desc:"개항기 외국인 주택 거리. 이국적 사진 스팟.",note:"⚠언덕이라 더움·시간 걸림 — 귀국 여유 클 때만"},
+ {id:"motomachi_shop",n:"모토마치·산노미야 쇼핑거리",reg:"모토마치",cat:"쇼핑·산책",lat:34.6913,lng:135.1918,o:0,c:1440,dwell:30,tag:"아케이드·빵집",desc:"고베는 빵·디저트 유명. 공항 가기 전 가볍게 구경.",note:""},
+ {id:"P049",n:"스테이크랜드 고베관(점심)",reg:"산노미야",cat:"점심(고베규)",lat:34.6929964,lng:135.1921423,o:660,c:1260,lo:1230,dwell:60,tag:"오픈런(11시) 추천",desc:"고베규 철판 스테이크. 인기·웨이팅 큼.",note:"오픈(11시) 직후 공략 추천. 부담되면 산노미야 간단식으로 대체"},
+ {id:"sannomiya_lunch",n:"산노미야 간단 점심(대체)",reg:"산노미야",cat:"점심(대안)",lat:34.6935,lng:135.1955,o:0,c:1440,dwell:30,tag:"빠른 식사",desc:"웨이팅·시간 압박이면 이쪽으로. 역 주변 아무 데나 빠르게.",note:"귀국 시간 촉박하면 이걸로"},
+];
+const BYID={};DB.forEach(p=>BYID[p.id]=p);
+const DETAIL={
+ P004:`<b>뭐하는 곳</b>: 고베 하버랜드 바닷가 공원, 낮에 다시 보기.<br><b>판단</b>: 호텔 근처라 체크아웃 전후 부담 없이 들를 수 있음.`,
+ kitano:`<b>뭐하는 곳</b>: 개항기 서양식 저택들이 모인 이국적 거리(기타노 이진칸).<br>⚠<b>주의</b>: 언덕이라 덥고 시간이 꽤 걸림. 귀국편까지 여유가 클 때만 추천.`,
+ motomachi_shop:`<b>뭐하는 곳</b>: 모토마치·산노미야 아케이드 상점가. 고베는 빵·디저트로 유명.<br><b>판단</b>: 공항 가기 전 기념품 사기 좋음, 가볍게.`,
+ P049:`<b>뭐하는 곳</b>: 고베규 철판 스테이크(구글4.2/2617). 산노미야, 매일 11:00-21:00.<br>⚠<b>인기·웨이팅 큼</b> — 오픈(11시) 직후나 이른 점심 공략 추천. 런치 세트가 가성비.<br><b>판단</b>: 고베 마지막 끼로 상징적이지만, 웨이팅+귀국 압박이면 무리하지 말 것.`,
+ sannomiya_lunch:`<b>뭐하는 곳</b>: 산노미야역 주변 아무 식당에서 빠르게.<br><b>판단</b>: 스테이크랜드 웨이팅 부담되거나 시간 촉박하면 이쪽으로 전환.`,
+};
+const START={n:"고베 숙소(메리켄파크)",lat:34.6851,lng:135.1912};
+// 포트라이너 산노미야역 승차 앵커: 안전빵 14:28편(도착 14:20 목표) / 늦어도 14:40편(도착 14:35 목표)
+// → 고베공항 18분 → 베이셔틀 15:30 출항 → KIX 16:00 → 무료버스 → T1 16:20(TW306 19:30, 3시간10분 전)
+const ANCHOR={name:"포트라이너 탑승(산노미야역) → 베이셔틀 15:30 → TW306 19:30",time:875,loc:{lat:34.6935,lng:135.1955},safeBuffer:15,latestBuffer:0,route:"산노미야역 도착 → 포트라이너 14:28(안전빵)/14:40(늦어도) → 고베공항 약18분 → 베이셔틀 15:30 출항 → KIX 약30분 → 무료연락버스 → T1 약16:20 도착(출발 3h10m 전)"};
+function hh(m){m=Math.round(((m%1440)+1440)%1440);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
+function travel(a,b){const d=hav(a,b);let m,mode;if(d<1.0){m=Math.max(5,Math.round(d*14/5)*5);mode='🚶 도보';}else{m=Math.round((d*4.5+9)/5)*5;mode='🚇 지하철/버스';}return{m,mode,d};}
+function hoursText(p){if(p.o===0&&p.c===0)return'⛔ 오늘 정기휴무';if(p.o===0&&p.c>=1440)return'🕒 상시 이용(24시간/거리)';return `🕒 오늘(화) ${hh(p.o)}-${hh(p.c)}${p.lo!=null?' (L.O.'+hh(p.lo)+')':''} 영업`;}
+function timingInfo(p, rawArr){
+  const closedAllDay=(p.o===0&&p.c===0);
+  const cutoff=(p.lo!=null)?p.lo:p.c;
+  const start=Math.max(rawArr,p.o||0);
+  const wait=rawArr<(p.o||0);
+  const ok=!closedAllDay&&start<cutoff;
+  const available=(p.c>=1440)?Infinity:Math.max(0,cutoff-start);
+  const short=ok&&isFinite(available)&&available<p.dwell;
+  const actualDwell=ok?Math.max(5,Math.min(p.dwell,isFinite(available)?available:p.dwell)):0;
+  let reason='';
+  if(closedAllDay)reason='오늘 정기휴무';
+  else if(!ok)reason=(p.lo!=null)?`L.O. ${hh(cutoff)} 지남(도착 ${hh(start)})`:`마감 ${hh(cutoff)} 지남(도착 ${hh(start)})`;
+  return {closedAllDay,ok,wait,available,short,actualDwell,start,reason};
+}
+function weatherFeel(m){const h=(((m%1440)+1440)%1440)/60;let d;
+ if(h<12) d={i:'☀️',temp:'30-33℃',feelt:'체감 34℃',hum:65,pop:15,rain:'0mm',t:'오전 맑음·강수확률 20% 양호. 폭염만 주의'};
+ else if(h<15) d={i:'🥵',temp:'32-33℃',feelt:'체감 35℃',hum:60,pop:20,rain:'0mm',t:'한낮 최고기온. 공항 이동 준비 시작할 시간대'};
+ else d={i:'🌤️',temp:'29-31℃',feelt:'체감 32℃',hum:65,pop:15,rain:'0mm',t:'오후·이동 중. 베이셔틀·공항은 실내 위주라 무난'};
+ d.num=`🌡 ${d.temp}(${d.feelt}) · 💧습도 ${d.hum}% · ☔강수 ${d.pop}%(${d.rain})`;
+ return d;
+}
+let B={cur:START,time:600,visited:new Set(),path:[]};
+function showBuilder(){document.getElementById('intro').classList.add('hidden');document.getElementById('builder').classList.remove('hidden');B={cur:START,time:600,startTime:600,visited:new Set(),path:[]};renderStartTime();}
+function renderStartTime(){
+ document.getElementById('builder').innerHTML=`
+ <div class="card"><div class="q">몇 시에 하루를 시작?</div>
+  <div class="qhint">체크아웃 전 가볍게 시작. 산노미야역 14:20~14:35까지는 도착해야 안전해요.</div>
+  <div class="opts">
+   <div class="opt" onclick="setStart(570)"><b>09:30</b><small>오전 관광 여유있게(기타노 등)</small></div>
+   <div class="opt" onclick="setStart(600)"><b>10:00</b><small>표준</small></div>
+   <div class="opt" onclick="setStart(660)"><b>11:00</b><small>느긋하게, 관광 최소화</small></div>
+  </div>
+  <div class="row"><button class="btn ghost mini" onclick="location.reload()">← 처음으로</button></div>
+ </div>`;
+}
+function setStart(t){B.startTime=t;B.time=t;renderBuilder();}
+function syncNow(){const d=new Date();let raw=d.getHours()*60+d.getMinutes();while(raw<B.time-360)raw+=1440;B.time=raw;renderBuilder();}
+function adjustTime(delta){B.time+=delta;renderBuilder();}
+function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
+function anchorImpactFrom(fromLoc, finish){
+  const tv=travel(fromLoc,ANCHOR.loc);
+  const safe=ANCHOR.time-tv.m-ANCHOR.safeBuffer;
+  const latest=ANCHOR.time-tv.m-ANCHOR.latestBuffer;
+  if(finish<=safe){
+    return `<div class="aimpact ok">📌 이곳 예상종료 ${hh(finish)} → 산노미야역 안전빵 도착 ${hh(safe)}(포트라이너14:28) → 늦어도 ${hh(latest)}(14:40편) (약 ${Math.round(safe-finish)}분 여유)</div>`;
+  } else if(finish<=latest){
+    return `<div class="aimpact warn">⚠ 14:28편은 놓치지만, ${hh(latest)}까지 산노미야역 도착하면 14:40편으로 커버 가능</div>`;
+  } else {
+    return `<div class="aimpact danger">🚨 이대로면 포트라이너 14:40편도 위험 — 베이셔틀 15:30편을 놓칠 수 있어요. 짧게 보거나 스킵 권장</div>`;
+  }
+}
+function optCard(o){const p=o.p;const ti=o.ti;
+   let extra='';
+   if(ti.wait){extra+=`<div class="waitwarn">⏳ 오픈 전이라 대기 필요</div>`;}
+   if(ti.short){extra+=`<div class="shortwarn">⚠ 도착 후 최대 ${ti.actualDwell}분만 이용 가능 (평소 약 ${p.dwell}분보다 짧음)</div>`;}
+   const finish=ti.start+ti.actualDwell;
+   const aimp=anchorImpactFrom(p,finish);
+   return `<div class="optb" onclick="openDetail('${p.id}')">
+   <div class="h">▶ ${p.n} <span class="mini">(${ti.short?'단축 '+ti.actualDwell:'약 '+p.dwell}분 머묾)</span></div>
+   <div class="dd">${p.desc||''}</div>
+   <div class="m">${hoursText(p)}</div>
+   <div class="m">${o.tv.mode} ${o.tv.m}분 → 도착 ${hh(B.time+o.tv.m)}</div>
+   ${extra}
+   ${p.note?`<div class="d">💡 ${p.note}</div>`:''}
+   ${aimp}
+  </div>`;}
+function renderBuilder(){
+ const opts=DB.filter(p=>!B.visited.has(p.id)).map(p=>{const tv=travel(B.cur,p);const rawArr=B.time+tv.m;const ti=timingInfo(p,rawArr);return {p,tv,ti};});
+ const feasible=opts.filter(o=>o.ti.ok).sort((a,b)=>a.ti.start-b.ti.start);
+ const excluded=opts.filter(o=>!o.ti.ok);
+ const cats=["산책","관광(선택)","쇼핑·산책","점심(고베규)","점심(대안)"];
+ let sec=cats.map(c=>{const l=feasible.filter(o=>o.p.cat===c);if(!l.length)return'';return `<div class="catsec"><div class="cathd">${c} · ${l.length}</div><div class="optgrid">${l.map(optCard).join('')}</div></div>`;}).join('');
+ let path=B.path.map((s,i)=>`<div class="pathitem"><b>${hh(s.arr)}</b> ${s.name} <span class="mini">(${s.dwell}분${s.short?'·단축':''} · ${s.mode} ${s.tv}분)</span> <a href="javascript:void(0)" onclick="undoTo(${i})" class="mini" style="color:var(--bad)">✕여기로 되돌리기</a></div>`).join('')||'<div class="mini">아직 없음 — 첫 목적지를 골라보세요.</div>';
+ let excludedBox=excluded.length?`<div class="warnbox">${excluded.map(o=>`<div class="exclrow">⛔ <b>${o.p.n}</b>는 ${o.ti.reason} 사유로 제외됨</div>`).join('')}</div>`:'';
+ const anchorNow=anchorImpactFrom(B.cur,B.time);
+ document.getElementById('builder').innerHTML=`
+ <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 정보도 갱신됨(8/18 예보 기반 추정).</div>
+  <div class="timeadjust">
+   <button class="synctime" onclick="syncNow()">🕐 지금 실제 시각으로 맞추기</button>
+   <button onclick="adjustTime(-15)">-15분</button><button onclick="adjustTime(-5)">-5분</button><button onclick="adjustTime(5)">+5분</button><button onclick="adjustTime(15)">+15분</button><button onclick="adjustTime(30)">+30분</button>
+  </div>
+ </div>
+ <div class="anchorbox"><div class="at">✈ TW-306 19:30 KIX 출발 (T1)</div><div class="ad">${anchorNow}<br>${ANCHOR.route}</div></div>
+ <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
+ <div class="mini">이동시간=좌표 직선거리 기반 추정. 마감 임박해도 짧게라도 볼 수 있으면 선택 가능(⚠단축 표시) — 진짜 불가능만 제외. 이 날은 <b>비행기가 최우선</b> — 앵커 경고 뜨면 관광 스킵 권장.</div>
+ <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
+   ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}
+ </div>
+ ${excludedBox}
+ <div class="card"><div class="q">▶ 갈 수 있는 곳 (${feasible.length})</div>
+   <div class="qhint">카테고리별. 각 카드에 <b>포트라이너/베이셔틀/비행기 영향</b>까지 표기.</div>
+   ${sec||'<div class="mini">남은 후보가 없어요.</div>'}
+ </div>
+ <div class="row"><button class="btn" onclick="finishB()">✈ 마무리·요약</button></div>`;
+ window.scrollTo(0,0);
+}
+function pickB(id){const p=BYID[id];const tv=travel(B.cur,p);const rawArr=B.time+tv.m;const ti=timingInfo(p,rawArr);if(!ti.ok)return;B.path.push({id,name:p.n,arr:ti.start,dwell:ti.actualDwell,mode:tv.mode,tv:tv.m,short:ti.short});B.time=ti.start+ti.actualDwell;B.cur=p;B.visited.add(id);renderBuilder();}
+function openDetail(id){window._did=id;const p=BYID[id];const tv=travel(B.cur,p);const rawArr=B.time+tv.m;const ti=timingInfo(p,rawArr);
+ const finish=ti.start+ti.actualDwell;
+ const aimp=anchorImpactFrom(p,finish);
+ document.getElementById('detailBody').innerHTML=`
+  <div class="mt">${p.n}</div>
+  <div class="ms">${p.tag} · ${hoursText(p)}<br>${tv.mode} ${tv.m}분 → 도착 ${hh(rawArr)} · ${ti.short?'단축 '+ti.actualDwell:'약 '+p.dwell}분 머묾${!ti.ok?' <span class="b">· ⛔'+ti.reason+'</span>':''}</div>
+  <div class="mbody">${DETAIL[id]||p.desc||''}${p.note?`<br><br>💡 ${p.note}`:''}${aimp?'<br>'+aimp:''}</div>
+  <div class="mrow">${ti.ok?'<button class="btn" onclick="selectDetail()">✅ 선택(경로에 추가)</button>':'<button class="btn" disabled>⛔ '+ti.reason+'</button>'}<button class="btn ghost" onclick="closeDetail()">닫기</button></div>`;
+ document.getElementById('detail').classList.remove('hidden');}
+function closeDetail(){document.getElementById('detail').classList.add('hidden');}
+function selectDetail(){const id=window._did;closeDetail();pickB(id);}
+function undoB(silent){const last=B.path.pop();if(!last){if(!silent)renderBuilder();return;}B.visited.delete(last.id);if(B.path.length){const prev=B.path[B.path.length-1];B.cur=BYID[prev.id];B.time=prev.arr+prev.dwell;}else{B.cur=START;B.time=B.startTime||600;}if(!silent)renderBuilder();}
+function undoTo(i){while(B.path.length>i){undoB(true);}renderBuilder();}
+function finishB(){
+ let path=B.path.map(s=>`<div class="pathitem"><b>${hh(s.arr)}-${hh(s.arr+s.dwell)}</b> ${s.name} <span class="mini">(${BYID[s.id].tag} · ${s.mode} ${s.tv}분${s.short?' · 단축':''})</span></div>`).join('')||'<div class="mini">경로 없음</div>';
+ document.getElementById('builder').innerHTML=`
+ <div class="typebox"><div class="tt">✈ 내가 짠 Day4 경로</div><div class="td">${B.path.length}곳 · 종료 ${hh(B.time)}</div></div>
+ <div class="card"><div class="q">타임라인</div>${path}</div>
+ <div class="anchorbox"><div class="at">✈ TW-306 19:30 KIX 출발</div><div class="ad">${anchorImpactFrom(B.cur,B.time)}<br>${ANCHOR.route}</div></div>
+ <div class="note">베이셔틀 정확한 시간표는 출발 전 kobe-access.jp/time에서 재확인 권장(30-60분 간격, 편 놓치면 다음 편까지 대기).</div>
+ <div class="row"><button class="btn" onclick="showBuilder()">🔄 다시 짜기</button></div>
+ <div class="mini">day4_kobe_master.md 참고.</div>`;
+ window.scrollTo(0,0);
+}
+</script>
+</body></html>

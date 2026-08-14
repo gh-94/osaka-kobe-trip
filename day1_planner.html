@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Day1 오사카 우메다 인터랙티브 플래너</title>
+<style>
+:root{--bg:#0f1216;--card:#181c22;--card2:#1e242c;--line:#2a313a;--text:#e8eaed;--muted:#9aa4b0;--accent:#ff7a59;--accent2:#5ac8fa;--good:#4ade80;--warn:#fbbf24;--bad:#f87171;--pill:#242b34}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.5}
+.wrap{max-width:740px;margin:0 auto;padding:18px 16px 80px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
+.q{font-size:17px;font-weight:700;margin-bottom:4px}
+.qhint{color:var(--muted);font-size:13px;margin-bottom:12px}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:.12s;font-size:15px}
+.opt:hover{border-color:var(--accent)}
+.opt b{display:block;margin-bottom:2px}
+.opt .pc{font-size:12px;margin-top:4px}.opt .pc .p{color:var(--good)}.opt .pc .c{color:var(--warn)}
+.opt.sel{border-color:var(--accent);background:#26201d}
+.bar{height:6px;background:var(--pill);border-radius:99px;overflow:hidden;margin:14px 0}
+.bar>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:.3s}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{background:var(--accent);color:#1a1206;border:none;border-radius:12px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.mini{padding:9px 12px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.modegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mode{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer}
+.mode:hover{border-color:var(--accent)}
+.mode b{display:block;font-size:15px}.mode small{color:var(--muted);font-size:12px}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.preset{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;font-size:14px}
+.preset:hover{border-color:var(--accent2)}.preset b{display:block}.preset small{color:var(--muted);font-size:12px}
+.typebox{background:linear-gradient(135deg,#26201d,#1a2430);border:1px solid var(--line);border-radius:16px;padding:18px}
+.typebox .tt{font-size:22px;font-weight:800}.typebox .td{color:var(--muted);font-size:14px;margin-top:4px}
+.tl{margin:8px 0 0;padding-left:4px}
+.stop{border-left:2px solid var(--line);padding:0 0 16px 16px;position:relative;margin-left:6px}
+.stop::before{content:"";position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.stop .tm{font-weight:700;color:var(--accent2);font-size:14px}
+.stop .ac{font-weight:700;margin:1px 0 6px}
+.place{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:7px 0}
+.place .pn{font-weight:700;font-size:14.5px}.place .pf{color:var(--muted);font-size:12.5px;margin-top:2px}
+.place .pr{font-size:13px;margin-top:6px}.place .alt{font-size:12.5px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--line);color:var(--warn)}
+.g{color:var(--good)}.w{color:var(--warn)}.b{color:var(--bad)}
+.note{background:#1a2430;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;margin:12px 0;color:#cfe3f5}
+.warnbox{background:#2a1e1a;border:1px solid #5a3a2a;border-radius:12px;padding:12px 14px;font-size:13px;margin:12px 0;color:#ffd9c2}
+.warnbox li{margin:4px 0}
+.cheat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0}
+.cheat h3{margin:0 0 8px;font-size:15px}.cheat li{font-size:13px;margin:5px 0}
+.hidden{display:none}
+.mini{color:var(--muted);font-size:12px;margin-top:6px}
+.statusbar{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#1a2430,#26201d);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.statusbar .now{font-size:18px;font-weight:800;color:var(--accent2)}
+.statusbar .at{font-size:13px;color:var(--muted)}
+.optb{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin:8px 0;cursor:pointer;transition:.12s;position:relative}
+.optb:hover{border-color:var(--accent)}
+.optb .h{font-weight:700;font-size:15px}
+.optb .m{font-size:12.5px;color:var(--accent2);margin-top:3px}
+.optb .d{font-size:12px;color:var(--muted);margin-top:3px}
+.excl{opacity:.5;border-style:dashed;cursor:not-allowed}
+.excl .m{color:var(--bad)}
+.optgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:9px}
+.catsec{margin:10px 0}
+.cathd{font-size:12.5px;color:var(--accent2);font-weight:700;margin:10px 0 4px;border-bottom:1px solid var(--line);padding-bottom:3px}
+.optb .dd{font-size:12.5px;margin-top:3px;color:var(--text)}
+.wf{font-size:12.5px;color:#ffd9a8;margin-top:5px;line-height:1.45}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+.overlay.hidden{display:none}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:520px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .mt{font-size:19px;font-weight:800}
+.modal .ms{color:var(--muted);font-size:12.5px;margin:3px 0 12px}
+.modal .mbody{font-size:13.5px;line-height:1.65}
+.modal .mrow{display:flex;gap:10px;margin-top:16px}
+.optb::after{content:"자세히 ›";position:absolute;right:11px;bottom:9px;font-size:11px;color:var(--accent2)}
+.optb.excl::after{content:none}
+.optb.excl{cursor:default}
+.pathitem{font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.pathitem b{color:var(--accent2)}
+a{color:var(--accent2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎡 Day1 우메다·나카자키초 인터랙티브 플래너</h1>
+<div class="sub">8/15(토) · 시간·이동·영업시간을 계산해 <b>불가능한 조합은 자동 제외</b>하는 인터랙티브 플래너</div>
+
+<div id="intro" class="card">
+  <div class="q">모드 선택</div>
+  <div class="qhint">두 방식 모두 8/15(토)의 <b>영업시간</b>을 반영하고, 없는 후기는 지어내지 않아요. 만료 야키니쿠는 <b>21:00 예약 확정</b> 기준으로 고정돼요.</div>
+  <div class="modegrid">
+    <div class="mode" onclick="showBuilder()"><b>🗺 경로 빌더</b><small>지금 시각+이동시간 계산 → 갈 수 있는 곳만. 21:00 만료 예약에 안 늦게 자동 경고</small></div>
+    <div class="mode" onclick="start()"><b>🧭 유형 진단</b><small>6문답으로 취향·날씨 맞춤 루트(빠름)</small></div>
+  </div>
+  <div class="qhint" style="margin-top:14px">또는 빠른 프리셋:</div>
+  <div class="presets">
+    <div class="preset" onclick="preset('A')"><b>Ⓐ 카페 감성형</b><small>나카자키초 깊게+노포킷사텐</small></div>
+    <div class="preset" onclick="preset('B')"><b>Ⓑ 전망 뷰형</b><small>우메키타·도지마하마·헵파이브</small></div>
+    <div class="preset" onclick="preset('C')"><b>Ⓒ 쇼핑형</b><small>그랜드프론트·한큐백화점</small></div>
+    <div class="preset" onclick="preset('D')"><b>Ⓓ 균형형</b><small>무난</small></div>
+  </div>
+</div>
+
+<div id="builder" class="hidden"></div>
+
+<div id="quiz" class="hidden">
+  <div class="bar"><div id="prog"></div></div>
+  <div id="qcard" class="card"></div>
+  <div class="row">
+    <button class="btn ghost" id="backBtn" onclick="back()">← 이전</button>
+    <button class="btn" id="nextBtn" onclick="next()" disabled>다음 →</button>
+  </div>
+</div>
+
+<div id="result" class="hidden"></div>
+<div id="detail" class="overlay hidden" onclick="if(event.target===this)closeDetail()"><div class="modal" id="detailBody"></div></div>
+</div>
+
+<script>
+const DB=[
+ {id:"P139",n:"우메키타 공원",reg:"우메다",cat:"공원",lat:34.7031,lng:135.4959,o:0,c:1440,dwell:15,tag:"공원(선택)",desc:"우메다역 바로 앞, 그랑그린 오사카 내 신축 공원. 도착 동선상 자연스럽게 지나감.",note:"짐 든 채로 잠깐 스쳐가도 무방"},
+ {id:"P038",n:"살롱 드 아만토",reg:"나카자키초",cat:"카페·디저트",lat:34.7080705,lng:135.5043988,o:720,c:1320,dwell:45,tag:"아트카페",desc:"예술가 커뮤니티 운영 개조 고택 아트카페. 나카자키초 감성의 발상지.",note:"연중무휴, 오봉에도 가장 안전한 선택"},
+ {id:"P036",n:"우테나 킷사텐",reg:"나카자키초",cat:"카페·디저트",lat:34.7079436,lng:135.5035954,o:600,c:1080,dwell:40,tag:"노포 킷사텐",desc:"쇼와 감성 노포 킷사텐. 고민가 분위기, 클래식 커피·토스트.",note:"월·화 휴무 — 토요일인 오늘은 영업. 아만토와 성격 겹쳐 택1 추천"},
+ {id:"P015",n:"Nova 珈琲と焼菓子",reg:"나카자키초",cat:"카페·디저트",lat:34.692259,lng:135.5153373,o:540,c:1080,dwell:35,tag:"커피·구움과자",desc:"커피+구움과자 카페. 깔끔·모던, 조용한 편.",note:"수요일 휴무 — 토요일 영업"},
+ {id:"P032",n:"MARK COFFEE ROASTERS",reg:"나카자키초",cat:"카페·디저트",lat:34.7087405,lng:135.5047249,o:600,c:1140,dwell:30,tag:"로스터리",desc:"자가배전 스페셜티 커피 로스터리.",note:"⚠부정기휴무 — 인스타 @mark_coffee_339 현장 확인 필요"},
+ {id:"P141",n:"Refue_",reg:"혼조니시(나카자키초 인근)",cat:"카페·디저트",lat:34.705,lng:135.5065,o:660,c:1080,dwell:40,tag:"레트로 카페",desc:"나카자키초 바로 옆 동네 레트로 골목 카페.",note:"18:00 영업종료 — 늦게 가면 닫혀있음"},
+ {id:"P138",n:"도지마하마 타워 전망대",reg:"도지마하마",cat:"전망대",lat:34.6942,lng:135.493,o:540,c:1260,dwell:25,tag:"무료 전망대",desc:"16층 무료 전망대. 해질녘(18:30~19:30) 방문 시 노을+야경.",note:"21:00 영업종료 — 만료 예약(21:00) 감안해 19:30~19:40엔 나와야 함"},
+ {id:"P140",n:"요도야바시 스카이 테라스",reg:"요도야바시",cat:"전망대",lat:34.6928,lng:135.5013,o:600,c:1320,dwell:20,tag:"무료 전망대",desc:"요도야바시역 바로 위(30F), 지상150m 무료 전망대.",note:"천장 뚫린 야외라 비 오면 이용 어려움 — 날씨 보고 판단"},
+ {id:"P008",n:"덴만구(오미쿠지·고슈인)",reg:"미나미모리마치",cat:"신사",lat:34.6960576,lng:135.5126556,o:540,c:1020,dwell:25,tag:"신사·오미쿠지",tag2:"선택",desc:"授与所에서 오미쿠지·고슈인. 기본은 8/17 오전으로 확정했지만, 시간 여유되면 오늘도 가능.",note:"17:00 授与所 마감 — 늦으면 참배만 가능(오미쿠지 못 뽑음)"},
+ {id:"P057",n:"그랜드 프론트 오사카",reg:"우메다",cat:"쇼핑(실내)",lat:34.7038664,lng:135.4949205,o:600,c:1260,dwell:40,tag:"쇼핑몰",desc:"우메다 대형 복합쇼핑몰. 비 오면 실내 대피 겸 좋음.",note:""},
+ {id:"P090",n:"한큐 우메다 본점",reg:"우메다",cat:"쇼핑(실내)",lat:34.7028186,lng:135.4985323,o:600,c:1200,dwell:40,tag:"백화점",desc:"한큐백화점 우메다 본점. 1층 인포메이션서 여권 제시 시 5% 게스트쿠폰.",note:"여권 꼭 지참"},
+ {id:"P088",n:"한큐 삼번가",reg:"우메다",cat:"쇼핑(실내)",lat:34.705657,lng:135.498387,o:600,c:1260,dwell:30,tag:"쇼핑몰",desc:"우메다역 연결 쇼핑몰. 실내 연결이라 비 올 때 이동 편함.",note:""},
+ {id:"P018",n:"헵파이브 관람차",reg:"우메다",cat:"전망·관람차",lat:34.7040684,lng:135.5000945,o:660,c:1380,dwell:25,tag:"관람차",desc:"백화점 옥상 관람차. 야경 좋음, 실내 진입이라 비 걱정 없음.",note:"Klook·KKday 사전예매가 현장보다 저렴할 수 있음"},
+ {id:"P001",n:"만료 미나미모리마치점",reg:"미나미모리마치",cat:"저녁(야키니쿠)",lat:34.6962995,lng:135.5096928,o:1260,c:1440,dwell:110,tag:"야키니쿠 확정예약",desc:"현지형 숯불 야키니쿠. 21:00 예약 확정.",note:"⭐확정 예약 21:00 — 이 시각 기준으로 이전 일정 역산할 것"},
+ {id:"P014",n:"Yakitori Izakaya KOUMOTO",reg:"미나미모리마치",cat:"저녁(대안)",lat:34.7021607,lng:135.5046357,o:1080,c:1740,dwell:70,tag:"야키토리",desc:"닭꼬치 이자카야. 만료 예약 틀어질 때 대안.",note:"18:00-05:00 연중무휴"},
+ {id:"P011",n:"오카게야",reg:"우메다·기타신치",cat:"저녁(대안)",lat:34.7070389,lng:135.5009931,o:960,c:1410,dwell:90,tag:"야키토리",desc:"숯불 야키토리 다이닝. KOUMOTO보다 저렴.",note:"토·일만 16:00-23:30"},
+ {id:"P012",n:"스시킨 화이티 우메다점",reg:"우메다",cat:"저녁(대안)",lat:34.703473,lng:135.4996311,o:660,c:1320,dwell:40,tag:"저렴 스시",desc:"우메다역 직결 저렴 스시·튀김. 회전 빠름.",note:"부정기 휴무 주의"},
+ {id:"P043",n:"SUGU",reg:"도야마초",cat:"게이바",lat:34.7036148,lng:135.5032088,o:1200,c:1740,dwell:60,tag:"로컬 카운터바",desc:"도야마초 작은 로컬 게이바.",note:"월요일 휴무 — 토요일인 오늘 영업"},
+ {id:"P121",n:"EAGLE OSAKA",reg:"도야마초",cat:"게이바",lat:34.7040952,lng:135.5041335,o:1200,c:1740,dwell:60,tag:"서일본 최대",desc:"서일본 최대 게이바/클럽. 캐시리스 결제, 진입장벽 낮음.",note:"토요일 주말 DJ파티"},
+ {id:"P041",n:"DEER",reg:"도야마초",cat:"게이바",lat:34.7037106,lng:135.5043945,o:1200,c:1740,dwell:60,tag:"이벤트 바",desc:"토요일·공휴일 중심 파티성 이벤트 바.",note:"토요일인 오늘 영업 유력"},
+];
+const BYID={};DB.forEach(p=>BYID[p.id]=p);
+const DETAIL={
+ P139:`<b>뭐하는 곳</b>: 우메다역 바로 앞 그랑그린 오사카 내 신축 공원.<br><b>팁</b>: 공항 리무진버스 하차 후 숙소 체크인 가는 길목이라 별도 동선 없이 자연스럽게 지나감. 24시간 개방.`,
+ P038:`<b>뭐하는 곳</b>: 예술가 커뮤니티가 운영하는 개조 고택 아트카페. 나카자키초 고민가 카페 발상지.<br><b>영업</b>: 12:00-22:00 연중무휴 → 오봉에도 가장 안전.<br><b>판단</b>: 나카자키초 감성·독특함 원하면 1순위.`,
+ P036:`<b>뭐하는 곳</b>: 쇼와 감성 노포 킷사텐. 고민가 분위기, 클래식 커피·토스트.<br><b>영업</b>: 10:00-18:00, 월·화 휴무(토요일 영업).<br><b>판단</b>: 아만토와 성격 겹치니 둘 중 하나.`,
+ P015:`<b>뭐하는 곳</b>: 커피+구움과자 카페. 깔끔·모던.<br><b>영업</b>: 수요일 휴무.<br><b>판단</b>: 커피·디저트 퀄리티 원하면. 조용한 편.`,
+ P032:`<b>뭐하는 곳</b>: 자가배전 스페셜티 커피 로스터리.<br>⚠<b>부정기휴무</b> — 인스타 @mark_coffee_339 현장 확인 필요.<br><b>판단</b>: 커피 퀄리티 최우선이면.`,
+ P141:`<b>뭐하는 곳</b>: 나카자키초 바로 옆 동네 레트로 골목 카페.<br><b>영업</b>: 11:00-18:00.<br><b>주의</b>: 18:00 영업종료라 나카자키초 일정 앞부분에 배치 추천.`,
+ P138:`<b>뭐하는 곳</b>: 16층 무료 전망대. 오사카 도심·도지마강 전망.<br><b>팁</b>: 해질녘(18:30~19:30) 방문 시 노을+야경, 관광객 적음.<br>⚠21:00 영업종료 — 만료 예약(21:00) 감안해 19:30~19:40엔 나와야 함.`,
+ P140:`<b>뭐하는 곳</b>: 요도야바시역 바로 위(30F) 무료 전망대, 지상150m.<br><b>장점</b>: 역 바로 위라 접근성 최고.<br>⚠천장 뚫린 야외 테라스 — 비 오면 이용 어려움.`,
+ P008:`<b>뭐하는 곳</b>: 오사카 덴만구. 授与所에서 오미쿠지·고슈인.<br><b>기본 계획</b>: 8/17(월) 오전으로 확정 이관됨. 오늘 시간 여유되면 대신 여기서 해도 무방.<br>⚠授与所 17:00 마감 — 늦으면 오미쿠지 못 뽑음(참배만 가능).`,
+ P057:`<b>뭐하는 곳</b>: 우메다 대형 복합쇼핑몰(그랜드프론트 오사카).<br><b>판단</b>: 비 오면 실내 대피 겸 쇼핑하기 좋음.`,
+ P090:`<b>뭐하는 곳</b>: 한큐백화점 우메다 본점.<br><b>할인</b>: 1층 인포메이션 센터서 여권 제시 시 5% 게스트쿠폰(계산 전 제시 필수). 세일상품 등 일부 제외.<br><b>팁</b>: 여권 꼭 지참.`,
+ P088:`<b>뭐하는 곳</b>: 우메다역 연결 쇼핑몰(한큐 삼번가).<br><b>팁</b>: 실내 연결이라 비 올 때 이동 편함.`,
+ P018:`<b>뭐하는 곳</b>: 백화점 옥상 관람차(헵파이브). 야경 좋음.<br><b>팁</b>: 실내 진입이라 비 걱정 없음. Klook·KKday 사전예매가 현장보다 저렴할 수 있음.`,
+ P001:`<b>뭐하는 곳</b>: 현지형 숯불 야키니쿠. 야키니쿠 WEST 백명점 2025.<br>⭐<b>21:00 예약 확정</b> — 이 시각 기준으로 이전 일정을 역산해서 짜야 함. 늦으면 예약 놓칠 수 있음.`,
+ P014:`<b>뭐하는 곳</b>: 닭꼬치 이자카야. 대표 手羽巻き串.<br><b>영업</b>: 매일 18:00-05:00 연중무휴, 예약 가능.<br><b>판단</b>: 만료 예약이 틀어질 경우 대안.`,
+ P011:`<b>뭐하는 곳</b>: 숯불 야키토리 다이닝(우메다·기타신치).<br><b>영업</b>: 토·일만 16:00-23:30.<br><b>판단</b>: KOUMOTO보다 저렴·이른 시간.`,
+ P012:`<b>뭐하는 곳</b>: 우메다역 직결 저렴 스시·튀김·안주. QR주문·회전 빠름.<br>⚠부정기 휴무 주의.<br><b>판단</b>: 접근성 최고, 가볍게 한잔이면.`,
+ P043:`<b>뭐하는 곳</b>: 도야마초 작은 로컬 카운터 게이바.<br><b>영업</b>: 월 휴무(토요일 영업 ✅).<br><b>판단</b>: 작고 로컬한 감성 원하면.`,
+ P121:`<b>뭐하는 곳</b>: 서일본 최대 게이바/클럽(2024.3 오픈). 1F 댄스플로어.<br><b>결제</b>: 캐시리스(카드·전자머니·QR).<br><b>판단</b>: 첫 방문 진입장벽 낮은 편. 토요일 주말 파티.`,
+ P121_alt:``,
+ P041:`<b>뭐하는 곳</b>: 토요일·공휴일 중심 파티성 이벤트 바.<br><b>판단</b>: 토요일인 오늘 영업 유력. 명칭 매핑 현장 재확인.`,
+};
+const START={n:"우메다(APA호텔·숙소)",lat:34.7025,lng:135.4959};
+function hh(m){m=Math.round(m);return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
+function travel(a,b){const d=hav(a,b);let m,mode;if(d<1.0){m=Math.max(5,Math.round(d*14/5)*5);mode='🚶 도보';}else{m=Math.round((d*4.5+9)/5)*5;mode='🚇 지하철';}return{m,mode,d};}
+function hoursText(p){if(p.o===0&&p.c>=1440)return'🕒 상시 이용(24시간/거리)';return `🕒 오늘(토) ${hh(p.o)}-${hh(p.c)} 영업`;}
+function weatherFeel(m){const h=m/60;let d;
+ if(h<12) d={i:'☀️',temp:'30-33℃',feelt:'체감 34℃',hum:70,pop:20,rain:'0mm',t:'오전~정오 대체로 맑음·폭염. 도착·이동은 이 시간대가 쾌적'};
+ else if(h<15) d={i:'🌥️',temp:'33-34℃',feelt:'체감 36℃+',hum:65,pop:50,rain:'0~1mm',t:'한낮 최고기온, 후텁지근. 슬슬 흐려짐 — 카페·실내 섞기'};
+ else if(h<18) d={i:'🌧️',temp:'29-31℃',feelt:'체감 33℃',hum:80,pop:85,rain:'0.7~1mm/h',t:'⚠오후 강수확률 85% — 비 올 확률 높음. 우산 필수, 카페·실내 위주로'};
+ else if(h<20) d={i:'🌦️',temp:'27-28℃',feelt:'체감 30℃',hum:78,pop:50,rain:'그칠 가능성',t:'저녁 무렵 비 소강 가능. 전망대·야외는 날씨 보고 판단'};
+ else d={i:'🌙',temp:'26-27℃',feelt:'열대야',hum:75,pop:20,rain:'0mm',t:'밤·비교적 안정. 저녁·야간 일정 무난'};
+ d.num=`🌡 ${d.temp}(${d.feelt}) · 💧습도 ${d.hum}% · ☔강수 ${d.pop}%(${d.rain})`;
+ return d;
+}
+let B={cur:START,time:900,visited:new Set(),path:[]};
+function showBuilder(){document.getElementById('intro').classList.add('hidden');document.getElementById('builder').classList.remove('hidden');B={cur:START,time:900,startTime:900,visited:new Set(),path:[]};renderStartTime();}
+function renderStartTime(){
+ document.getElementById('builder').innerHTML=`
+ <div class="card"><div class="q">몇 시에 우메다 숙소에서 출발?</div>
+  <div class="qhint">KIX 13:00 도착 → 리무진버스 → 우메다 15:30경 도착 기준. 만료 저녁 예약은 21:00 확정이에요.</div>
+  <div class="opts">
+   <div class="opt" onclick="setStart(900)"><b>15:00</b><small>체크인 서두르고 일찍 시작</small></div>
+   <div class="opt" onclick="setStart(930)"><b>15:30</b><small>표준(실제 도착 예상시각)</small></div>
+   <div class="opt" onclick="setStart(960)"><b>16:00</b><small>느긋하게</small></div>
+  </div>
+  <div class="row"><button class="btn ghost mini" onclick="location.reload()">← 모드 선택</button></div>
+ </div>`;
+}
+function setStart(t){B.startTime=t;B.time=t;renderBuilder();}
+function editStart(){B.visited=new Set();B.path=[];B.cur=START;renderStartTime();}
+function optCard(o){const p=o.p;return `<div class="optb" onclick="openDetail('${p.id}')">
+   <div class="h">▶ ${p.n} <span class="mini">(약 ${p.dwell}분 머묾)</span></div>
+   <div class="dd">${p.desc||''}</div>
+   <div class="m">${hoursText(p)}</div>
+   <div class="m">${o.tv.mode} ${o.tv.m}분 → 도착 ${hh(o.arr)}${o.wait?' <span class="w">(오픈 '+hh(p.o)+' 대기)</span>':''}</div>
+   ${p.note?`<div class="d">💡 ${p.note}</div>`:''}
+  </div>`;}
+function renderBuilder(){
+ const opts=DB.filter(p=>!B.visited.has(p.id)).map(p=>{const tv=travel(B.cur,p);const arr=B.time+tv.m;const ok=arr<p.c-15;return {p,tv,arr,ok,wait:arr<p.o,reason:!ok?`도착 ${hh(arr)}인데 ${hh(p.c)} 마감`:''};});
+ const feasible=opts.filter(o=>o.ok).sort((a,b)=>a.arr-b.arr);
+ const excluded=opts.filter(o=>!o.ok).sort((a,b)=>a.tv.m-b.tv.m);
+ const cats=["공원","카페·디저트","전망대","신사","쇼핑(실내)","전망·관람차","저녁(야키니쿠)","저녁(대안)","게이바"];
+ let sec=cats.map(c=>{const l=feasible.filter(o=>o.p.cat===c);if(!l.length)return'';return `<div class="catsec"><div class="cathd">${c} · ${l.length}</div><div class="optgrid">${l.map(optCard).join('')}</div></div>`;}).join('');
+ let path=B.path.map((s,i)=>`<div class="pathitem"><b>${hh(s.arr)}</b> ${s.name} <span class="mini">(${s.dwell}분${s.wait?'·오픈대기':''} · ${s.mode} ${s.tv}분)</span> <a href="javascript:void(0)" onclick="undoTo(${i})" class="mini" style="color:var(--bad)">✕여기로 되돌리기</a></div>`).join('')||'<div class="mini">아직 없음 — 첫 목적지를 골라보세요.</div>';
+ let eo=excluded.slice(0,6).map(o=>`<div class="optb excl"><div class="h">✕ ${o.p.n}</div><div class="m">${o.reason} (${o.tv.mode} ${o.tv.m}분)</div></div>`).join('');
+ const manryoTime=B.path.find(s=>s.id==='P001');
+ const willMissManryo=!manryoTime && B.time>1230 && !B.visited.has('P001');
+ document.getElementById('builder').innerHTML=`
+ <div class="statusbar"><div class="now">🕐 ${hh(B.time)} · 현재: ${B.cur.n}</div><div class="wf">${weatherFeel(B.time).num}<br>${weatherFeel(B.time).i} ${weatherFeel(B.time).t}</div><div class="at">시계가 흐르면 위 날씨도 바뀜(8/15 예보 기반 추정·라이브 아님). 마감 걸리면 자동 제외.</div></div>
+ <div class="row"><button class="btn ghost mini" onclick="editStart()">🕐 출발시각 변경</button><button class="btn ghost mini" onclick="location.reload()">🔄 처음부터</button></div>
+ <div class="mini">이동시간=좌표 직선거리 기반 <b>넉넉한</b> 추정. 머무는시간=구경·대기 포함 넉넉히. 영업시간 2026-08-14 확인·추정 혼재 → 현장 재확인.</div>
+ ${willMissManryo?'<div class="warnbox">⏰ 21:00 <b>만료 예약</b>이 있어요 — 지금 페이스면 늦을 수 있으니 이동시간 역산해서 챙기세요.</div>':''}
+ <div class="card"><div class="q">🧭 지금까지 경로 ${B.path.length?`(${B.path.length}곳)`:''}</div>${path}
+   ${B.path.length?'<div class="row"><button class="btn ghost mini" onclick="undoB()">↩ 마지막 한 곳 취소</button></div>':''}
+ </div>
+ <div class="card"><div class="q">▶ 갈 수 있는 곳 (${feasible.length})</div>
+   <div class="qhint">카테고리별. 각 카드에 <b>어떤 곳인지·소요·이동·도착·마감</b> 표기.</div>
+   ${sec||'<div class="mini">남은 후보가 없어요.</div>'}
+   ${eo?`<div class="qhint" style="margin-top:14px">⛔ 지금 가면 마감/불가 (참고):</div><div class="optgrid">${eo}</div>`:''}
+ </div>
+ <div class="row"><button class="btn" onclick="finishB()">🌃 마무리·요약</button></div>`;
+ window.scrollTo(0,0);
+}
+function pickB(id){const p=BYID[id];const tv=travel(B.cur,p);let arr=B.time+tv.m;const wait=arr<p.o;if(wait)arr=p.o;B.path.push({id,name:p.n,arr,dwell:p.dwell,mode:tv.mode,tv:tv.m,wait});B.time=arr+p.dwell;B.cur=p;B.visited.add(id);renderBuilder();}
+function openDetail(id){window._did=id;const p=BYID[id];const tv=travel(B.cur,p);const arr=B.time+tv.m;const feasible=arr<p.c-15;
+ document.getElementById('detailBody').innerHTML=`
+  <div class="mt">${p.n}</div>
+  <div class="ms">${p.tag} · ${hoursText(p)}<br>${tv.mode} ${tv.m}분 → 도착 ${hh(arr)}${arr<p.o?' (오픈 '+hh(p.o)+' 대기)':''} · 약 ${p.dwell}분 머묾${!feasible?' <span class="b">· ⛔지금 가면 마감</span>':''}</div>
+  <div class="mbody">${DETAIL[id]||p.desc||''}${p.note?`<br><br>💡 ${p.note}`:''}</div>
+  <div class="mrow">${feasible?'<button class="btn" onclick="selectDetail()">✅ 선택(경로에 추가)</button>':'<button class="btn" disabled>⛔ 마감으로 불가</button>'}<button class="btn ghost" onclick="closeDetail()">닫기</button></div>`;
+ document.getElementById('detail').classList.remove('hidden');}
+function closeDetail(){document.getElementById('detail').classList.add('hidden');}
+function selectDetail(){const id=window._did;closeDetail();pickB(id);}
+function undoB(silent){const last=B.path.pop();if(!last){if(!silent)renderBuilder();return;}B.visited.delete(last.id);if(B.path.length){const prev=B.path[B.path.length-1];B.cur=BYID[prev.id];B.time=prev.arr+prev.dwell;}else{B.cur=START;B.time=B.startTime||900;}if(!silent)renderBuilder();}
+function undoTo(i){while(B.path.length>i){undoB(true);}renderBuilder();}
+function finishB(){
+ let path=B.path.map(s=>`<div class="pathitem"><b>${hh(s.arr)}-${hh(s.arr+s.dwell)}</b> ${s.name} <span class="mini">(${BYID[s.id].tag} · ${s.mode} ${s.tv}분${s.wait?' · 오픈대기':''})</span></div>`).join('')||'<div class="mini">경로 없음</div>';
+ let visitedRegions=[...new Set(B.path.map(s=>BYID[s.id].reg))];
+ document.getElementById('builder').innerHTML=`
+ <div class="typebox"><div class="tt">🗺 내가 짠 Day1 경로</div><div class="td">${B.path.length}곳 · 종료 ${hh(B.time)} · ${visitedRegions.join(' → ')}</div></div>
+ <div class="card"><div class="q">타임라인</div>${path}</div>
+ ${!B.path.some(s=>s.id==='P001')?'<div class="warnbox">🥩 21:00 <b>만료 예약</b>을 경로에 안 넣었어요 — 확정 예약이니 잊지 않도록 챙기세요.</div>':''}
+ ${B.time>1440?'<div class="warnbox">⚠ 종료가 자정을 넘어요 — 게이바 일정 조절 고려.</div>':''}
+ <div class="cheat"><h3>🔁 비슷한 곳 우선순위</h3><ul>
+   <li>나카자키초 카페=아만토(감성)↔우테나(노포)↔Nova/MARK(커피퀄리티) · 저녁 야키토리=KOUMOTO↔오카게야 · 게이바=SUGU/DEER(로컬)↔EAGLE(대형·캐시리스)</li></ul></div>
+ <div class="row"><button class="btn" onclick="showBuilder()">🔄 다시 짜기</button><button class="btn ghost mini" onclick="location.reload()">모드 선택</button></div>
+ <div class="mini">상세 밑재료: day1_osaka_master.md. 만료 21:00 확정 예약 기준.</div>`;
+ window.scrollTo(0,0);
+}
+const QS=[
+ {k:"focus",q:"오늘의 무게중심은?",hint:"하루 색깔",opts:[
+   {v:"cafe",t:"나카자키초 카페 감성",p:"골목·레트로 산책",c:"쇼핑·전망 압축"},
+   {v:"view",t:"전망대·뷰",p:"무료 전망대 여러 곳",c:"비 오면 애매"},
+   {v:"shop",t:"우메다 실내 쇼핑",p:"비 걱정 없음",c:"나카자키초 얕게"},
+   {v:"mix",t:"골고루",p:"무난",c:"깊게는 어려움"}]},
+ {k:"tenmangu",q:"덴만구 오미쿠지, 오늘 할까?",hint:"기본은 8/17(월) 오전으로 확정 이관됨",opts:[
+   {v:"today",t:"오늘 시간 되면",p:"바로 해결",c:"授与所 17시 마감 빠듯"},
+   {v:"later",t:"8/17로 넘기기(추천)",p:"여유롭게, 오늘 압박 없음",c:"—"}]},
+ {k:"cafe",q:"나카자키초 카페 취향?",hint:"1-2곳이면 충분",opts:[
+   {v:"amanto",t:"아만토(감성·독특)",p:"연중무휴·오봉 안전",c:"—"},
+   {v:"utena",t:"우테나(노포 킷사텐)",p:"쇼와 레트로",c:"—"},
+   {v:"coffee",t:"Nova/MARK(커피 퀄리티)",p:"조용·모던",c:"MARK는 휴무 가능성"},
+   {v:"skip",t:"카페는 패스",p:"다른 데 시간 더",c:"나카자키초 느낌 약함"}]},
+ {k:"view",q:"무료 전망대 들를까?",hint:"도지마하마·요도야바시, 비 오면 자동 스킵 권장",opts:[
+   {v:"both",t:"둘 다",p:"노을+접근성 다 챙김",c:"이동시간 붙음"},
+   {v:"one",t:"하나만(도지마하마 노을)",p:"타이밍 맞으면 예쁨",c:"—"},
+   {v:"skip",t:"스킵",p:"시간 절약",c:"—"}]},
+ {k:"dinner",q:"저녁은?",hint:"만료는 21:00 예약 확정",opts:[
+   {v:"manryo",t:"만료(확정예약)",p:"확정돼있음",c:"21:00 늦으면 안 됨"},
+   {v:"koumoto",t:"KOUMOTO(대안)",p:"연중무휴·유연",c:"만료 예약 취소 필요"}]},
+ {k:"bar",q:"도야마초 게이바, 어떤 스타일?",hint:"1-2곳 추천",opts:[
+   {v:"local",t:"로컬 감성(SUGU/DEER)",p:"현지 분위기",c:"작은 규모"},
+   {v:"eagle",t:"대형·캐시리스(EAGLE)",p:"진입장벽 낮음",c:"—"},
+   {v:"skip",t:"안 감",p:"일찍 마무리",c:"—"}]},
+];
+const P={P139:BYID.P139,P038:BYID.P038,P036:BYID.P036,P015:BYID.P015,P032:BYID.P032,P141:BYID.P141,P138:BYID.P138,P140:BYID.P140,P008:BYID.P008,P057:BYID.P057,P090:BYID.P090,P088:BYID.P088,P018:BYID.P018,P001:BYID.P001,P014:BYID.P014,P011:BYID.P011,P012:BYID.P012,P043:BYID.P043,P121:BYID.P121,P041:BYID.P041};
+let A={},cur=0;
+const PRESETS={
+ A:{focus:'cafe',tenmangu:'later',cafe:'amanto',view:'skip',dinner:'manryo',bar:'local'},
+ B:{focus:'view',tenmangu:'later',cafe:'skip',view:'both',dinner:'manryo',bar:'eagle'},
+ C:{focus:'shop',tenmangu:'later',cafe:'skip',view:'skip',dinner:'manryo',bar:'local'},
+ D:{focus:'mix',tenmangu:'later',cafe:'amanto',view:'one',dinner:'manryo',bar:'local'},
+};
+function preset(k){A=Object.assign({},PRESETS[k]);buildResult(k);}
+function start(){document.getElementById('intro').classList.add('hidden');document.getElementById('quiz').classList.remove('hidden');cur=0;render();}
+function render(){const Q=QS[cur];document.getElementById('prog').style.width=((cur)/(QS.length)*100)+'%';
+ let h=`<div class="q">${Q.q}</div><div class="qhint">${Q.hint}</div><div class="opts">`;
+ Q.opts.forEach(o=>{h+=`<div class="opt ${A[Q.k]===o.v?'sel':''}" onclick="pick('${Q.k}','${o.v}')"><b>${o.t}</b><div class="pc"><span class="p">👍 ${o.p}</span>${o.c&&o.c!=='—'?` &nbsp; <span class="c">👎 ${o.c}</span>`:''}</div></div>`;});
+ h+='</div>';document.getElementById('qcard').innerHTML=h;
+ document.getElementById('backBtn').style.visibility=cur===0?'hidden':'visible';
+ document.getElementById('nextBtn').disabled=!A[Q.k];
+ document.getElementById('nextBtn').textContent=cur===QS.length-1?'결과 보기 ✨':'다음 →';}
+function pick(k,v){A[k]=v;render();}
+function back(){if(cur>0){cur--;render();}}
+function next(){if(cur<QS.length-1){cur++;render();}else{document.getElementById('prog').style.width='100%';buildResult();}}
+function pcard(key,alt){const p=P[key];if(!p)return'';let a=alt?`<div class="alt">↔ ${alt}</div>`:'';return `<div class="place"><div class="pn">${p.n} <span class="mini">(약 ${p.dwell}분)</span></div><div class="pf">${p.tag}${p.o?` · ~${hh(p.c)} 마감`:''}</div>${p.note?`<div class="pr">${p.note}</div>`:''}${a}</div>`;}
+function stop(tm,ac,body){return `<div class="stop"><div class="tm">${tm}</div><div class="ac">${ac}</div>${body||''}</div>`;}
+function typeName(){return {cafe:"☕ 카페 감성 산책형",view:"🌇 전망대 뷰형",shop:"🛍 실내 쇼핑형",mix:"⚖ 밸런스 여행형"}[A.focus]||"여행형";}
+function buildResult(presetKey){
+ const {focus,tenmangu,cafe,view,dinner,bar}=A;
+ let T=[],W=[];let clock=930;
+ const slot=d=>{const s=clock;clock+=d;return hh(s)+'-'+hh(clock);};
+ T.push(stop(slot(20),'우메다 도착·짐 정리(숙소)',''));
+ if(tenmangu==='today'){T.push(stop(slot(30),'덴만구 오미쿠지(授与所 17시 마감 주의)',pcard('P008')));}
+ let cb='';if(cafe==='amanto')cb=pcard('P038');else if(cafe==='utena')cb=pcard('P036');else if(cafe==='coffee')cb=pcard('P015','MARK는 휴무 가능성 있어 Nova 우선')+pcard('P032');
+ T.push(stop(slot(cafe==='skip'?20:60),`나카자키초 골목 산책${cafe!=='skip'?'+카페':''}`,cb||'<div class="mini">카페는 패스, 골목만 가볍게 산책.</div>'));
+ if(view==='both'){T.push(stop(slot(25),'도지마하마 타워 전망대(노을)',pcard('P138')));T.push(stop(slot(20),'요도야바시 스카이테라스',pcard('P140')));}
+ else if(view==='one'){T.push(stop(slot(25),'도지마하마 타워 전망대(노을 타이밍)',pcard('P138')));}
+ if(focus==='shop'){T.push(stop(slot(40),'그랜드프론트·한큐백화점 실내 쇼핑',pcard('P057')+pcard('P090','여권 지참시 5% 게스트쿠폰')+pcard('P088')));}
+ T.push(stop(slot(30),'숙소 복귀·휴식·샤워',''));
+ let db='';if(dinner==='manryo')db=pcard('P001');else db=pcard('P014','만료 예약 취소 시 대안');
+ T.push(stop('21:00-22:50','저녁 야키니쿠(만료 확정예약)',db));
+ if(bar!=='skip'){let bb=bar==='local'?pcard('P043')+pcard('P041','SUGU와 취향껏'):pcard('P121');T.push(stop(hh(clock+15)+'-23:30','도야마초 게이바',bb));}
+ T.push(stop(hh(clock>1440?clock-1440:clock),'숙소 복귀',''));
+ if(dinner==='manryo')W.push('만료는 <b>21:00 확정 예약</b> — 이 시각에 늦지 않게 이전 일정 역산 필수.');
+ if(view==='both'&&cafe!=='skip')W.push('카페+전망대 둘 다 깊게 하면 21시 저녁까지 <b>시간이 빠듯</b>할 수 있어요 — 하나 줄이는 것도 방법.');
+ if(tenmangu==='today')W.push('덴만구는 授与所 17시 마감이라 나카자키초를 압축해야 함 — 기본은 8/17로 넘기는 걸 추천.');
+ W.push('Day1 강수확률 85% — 오후 비 대비 우산 필수, 전망대(야외)는 날씨 보고 즉흥 결정.');
+ let type=typeName();
+ let desc=['나카자키초'+({amanto:'(아만토)',utena:'(우테나)',coffee:'(커피퀄리티)',skip:'스킵'}[cafe]||''),'전망대'+({both:'둘다',one:'하나',skip:'스킵'}[view]||''),'덴만구'+(tenmangu==='today'?'오늘':'8/17로'),'게이바'+({local:'로컬',eagle:'대형',skip:'안감'}[bar]||'')];
+ let wl=W.map(x=>`<li>${x}</li>`).join('');
+ document.getElementById('quiz').classList.add('hidden');
+ document.getElementById('result').innerHTML=`
+ <div class="typebox"><div class="tt">${presetKey?'프리셋 '+presetKey+' · ':''}${type}</div><div class="td">${desc.join(' · ')}</div></div>
+ <div class="warnbox"><b>⚠ 현실 제약·트레이드오프</b><ul>${wl}</ul></div>
+ <div class="note">각 지점에 <b>소요시간(약 N분)</b> 표기. 더 정밀하게 짜려면 상단 <b>🗺 경로 빌더</b> 모드(이동시간·마감 자동 반영) 추천.</div>
+ <div class="tl">${T.join('')}</div>
+ <div class="cheat"><h3>🔁 비슷한 곳 우선순위</h3><ul>
+   <li>나카자키초 카페=아만토(감성)↔우테나(노포)↔Nova/MARK(퀄리티) · 저녁 야키토리=KOUMOTO↔오카게야 · 게이바=SUGU/DEER(로컬)↔EAGLE(대형)</li></ul></div>
+ <div class="cheat"><h3>⚠ 공통</h3><ul>
+   <li>우메다 지역명 혼동 주의(梅田/東梅田/西梅田) · 만료 21:00 확정예약 · 8/15 강수확률 85%</li></ul></div>
+ <div class="row"><button class="btn" onclick="location.reload()">🔄 처음부터</button></div>
+ <div class="mini">day1_osaka_master.md 참고. 없는 후기는 지어내지 않음.</div>`;
+ document.getElementById('result').classList.remove('hidden');window.scrollTo(0,0);
+}
+</script>
+</body></html>
